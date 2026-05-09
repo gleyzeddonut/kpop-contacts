@@ -647,38 +647,46 @@
   }
   .section-label.toggleable {
     display: flex; align-items: center; justify-content: space-between;
-    width: 100%; padding: 9px 12px;
+    width: 100%; padding: 9px 12px 9px 14px;
     cursor: pointer; user-select: none;
-    transition: background 0.12s, color 0.12s;
+    transition: background 0.15s, color 0.15s;
     min-height: 36px;
     background: var(--card);
     border-bottom: 1px solid var(--border);
     margin: 0;
+    font-size: 11px;
+    font-weight: 400;
+    font-style: italic;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text-muted);
   }
   .notes-accordion.notes-collapsed .section-label.toggleable {
     border-bottom: none;
     border-radius: 8px;
   }
   .section-label.toggleable:hover {
-    color: var(--text-muted);
+    color: var(--text);
     background: var(--card-hover);
   }
   .notes-chevron {
-    color: var(--text-dim);
-    transition: transform 0.18s ease, color 0.12s;
+    color: rgba(255, 45, 120, 0.4);
+    transition: transform 0.18s ease, color 0.15s;
     flex-shrink: 0;
   }
-  .section-label.toggleable:hover .notes-chevron { color: var(--text-muted); }
+  .section-label.toggleable:hover .notes-chevron { color: var(--accent); }
   .notes-chevron.collapsed { transform: rotate(-90deg); }
 
   .artist-notes-box {
     background: var(--surface);
     border: none;
+    border-left: 2px solid rgba(255, 45, 120, 0.3);
     border-radius: 0;
-    padding: 12px 14px;
+    padding: 11px 14px 11px 16px;
     font-size: 12px;
+    font-style: italic;
     color: var(--text-muted);
-    line-height: 1.65;
+    line-height: 1.7;
     margin: 0;
   }
 
@@ -1370,7 +1378,7 @@
     position: absolute; top: 12px; right: 12px;
     display: none; gap: 4px;
   }
-  .list-card:hover .list-card-actions { display: flex; }
+  .list-card-wrap:hover .list-card-actions { display: flex; }
   .list-card-wrap { position: relative; }
 
   /* ── BACK BUTTON ── */
@@ -2166,7 +2174,7 @@ let confirmCallback = null;
 // ── Scan queue ──
 const scanQueue = [];       // [{placeholderId, name}]
 let scanQueueRunning = false;
-const collapsedNotes = new Set();
+const expandedNotes = new Set();
 
 const GENERIC_EMAIL_PREFIXES = ['info@', 'contact@', 'hello@', 'admin@', 'general@', 'support@', 'inquiry@', 'noreply@'];
 
@@ -2567,12 +2575,12 @@ function renderDetail() {
     </div>
     <div class="detail-body">
       ${a.notes ? `
-        <div class="notes-accordion ${collapsedNotes.has(a.id) ? 'notes-collapsed' : ''}">
+        <div class="notes-accordion ${expandedNotes.has(a.id) ? '' : 'notes-collapsed'}">
           <div class="section-label toggleable" onclick="toggleNotes('${h(a.id)}')">
             Notes
-            <svg class="notes-chevron ${collapsedNotes.has(a.id) ? 'collapsed' : ''}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            <svg class="notes-chevron ${expandedNotes.has(a.id) ? '' : 'collapsed'}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </div>
-          ${collapsedNotes.has(a.id) ? '' : `<div class="artist-notes-box">${h(a.notes)}</div>`}
+          ${expandedNotes.has(a.id) ? `<div class="artist-notes-box">${h(a.notes)}</div>` : ''}
         </div>
       ` : ''}
 
@@ -2629,8 +2637,8 @@ function renderDetail() {
 // ACTIONS
 // ═══════════════════════════════════════════
 function toggleNotes(artistId) {
-  if (collapsedNotes.has(artistId)) collapsedNotes.delete(artistId);
-  else collapsedNotes.add(artistId);
+  if (expandedNotes.has(artistId)) expandedNotes.delete(artistId);
+  else expandedNotes.add(artistId);
   renderDetail();
 }
 
@@ -2793,15 +2801,26 @@ function confirmDelete(type, ...args) {
   const msgs = {
     artist: 'Delete this artist and all their contacts? This cannot be undone.',
     contact: 'Delete this contact? This cannot be undone.',
+    list: `Delete "${args[1]}"? This will remove the list and all its artists. This cannot be undone.`,
   };
-  const titles = { artist: 'Delete Artist', contact: 'Delete Contact' };
+  const titles = { artist: 'Delete Artist', contact: 'Delete Contact', list: 'Delete List' };
   document.getElementById('confirm-title').textContent = titles[type];
   document.getElementById('confirm-msg').textContent = msgs[type];
   document.getElementById('confirm-overlay').classList.add('open');
   confirmCallback = () => {
     if (type === 'artist') deleteArtist(args[0]);
     if (type === 'contact') deleteContact(args[0], args[1]);
+    if (type === 'list') deleteListConfirmed(args[0]);
   };
+}
+
+async function deleteListConfirmed(listId) {
+  try {
+    await window.kc.deleteList(listId);
+    lists = lists.filter(l => l.id !== listId);
+    renderDashboard();
+    toast('List deleted');
+  } catch (err) { toast('Error: ' + err.message, true); }
 }
 
 function closeConfirm(ok) {
@@ -3372,16 +3391,24 @@ function renderDashboard() {
   const shared = lists.filter(l => l.role !== 'owner');
 
   const cardHTML = (l) => `
-    <div class="list-card" onclick="openList('${h(l.id)}','${h(l.role)}')">
-      <div class="list-card-name">${h(l.name)}</div>
-      <div class="list-card-footer">
-        <span class="list-role-badge ${l.role}">${l.role}</span>
-        ${l.role === 'owner' ? `
-          <button class="icon-btn sm" style="margin-left:auto" onclick="event.stopPropagation();openShareModal('${h(l.id)}')">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-            Share
-          </button>` : ''}
+    <div class="list-card-wrap">
+      <div class="list-card" onclick="openList('${h(l.id)}','${h(l.role)}')">
+        <div class="list-card-name">${h(l.name)}</div>
+        <div class="list-card-footer">
+          <span class="list-role-badge ${l.role}">${l.role}</span>
+          ${l.role === 'owner' ? `
+            <button class="icon-btn sm" style="margin-left:auto" onclick="event.stopPropagation();openShareModal('${h(l.id)}')">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+              Share
+            </button>` : ''}
+        </div>
       </div>
+      ${l.role === 'owner' ? `
+        <div class="list-card-actions">
+          <button class="icon-btn sm" title="Delete list" onclick="event.stopPropagation();confirmDelete('list','${h(l.id)}','${h(l.name)}')">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>
+        </div>` : ''}
     </div>`;
 
   let html = '';
@@ -3686,7 +3713,7 @@ async function sendPasswordReset() {
 // ═══════════════════════════════════════════
 // UPDATE CHECK
 // ═══════════════════════════════════════════
-const APP_VERSION  = '1.0.0'
+const APP_VERSION  = '1.0.1'
 const VERSION_URL  = 'https://raw.githubusercontent.com/gleyzeddonut/kpop-contacts/main/version.json'
 
 function semverGt(a, b) {
