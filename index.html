@@ -1,0 +1,3707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K:CONTACTS — K-Pop Industry Directory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #09090E;
+    --surface: #0F0F18;
+    --card: #141420;
+    --card-hover: #1C1C2C;
+    --border: #1E1E30;
+    --border-light: #2E2E48;
+    --text: #EEEEF5;
+    --text-muted: #6B6B8A;
+    --text-dim: #3A3A55;
+    --accent: #FF2D78;
+    --accent-dim: rgba(255, 45, 120, 0.12);
+    --accent-glow: rgba(255, 45, 120, 0.25);
+    --green: #00D97E;
+    --font-display: 'Gotham', 'Gotham Book', 'Montserrat', sans-serif;
+    --font-mono: 'Space Mono', monospace;
+    --font-name: 'Apercu Bold', 'Apercu', 'Gotham Bold', 'Montserrat', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-display);
+    overflow: hidden;
+  }
+
+  .app {
+    display: grid;
+    grid-template-rows: 54px 1fr;
+    grid-template-columns: 210px 1fr 380px;
+    height: 100vh;
+    grid-template-areas:
+      "header header header"
+      "sidebar list detail";
+  }
+
+  /* ── HEADER ── */
+  header {
+    grid-area: header;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    z-index: 10;
+  }
+
+  .logo {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--text);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .logo span { color: var(--accent); }
+
+  .search-wrap {
+    flex: 1;
+    max-width: 480px;
+    position: relative;
+  }
+  .search-wrap svg {
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+  #search {
+    width: 100%;
+    padding: 8px 12px 8px 34px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  #search::placeholder { color: var(--text-muted); }
+  #search:focus { border-color: var(--border-light); }
+
+  .shortcut-hint {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+
+  .header-actions { display: flex; gap: 8px; margin-left: auto; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: none;
+    white-space: nowrap;
+  }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--border-light); }
+
+  /* ── SIDEBAR ── */
+  aside {
+    grid-area: sidebar;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    overflow-y: auto;
+    padding: 14px 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebar-section {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 0 16px 8px;
+  }
+
+  .label-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 16px;
+    cursor: pointer;
+    transition: background 0.1s;
+    font-size: 12px;
+    color: var(--text-muted);
+    user-select: none;
+  }
+  .label-item:hover { background: var(--card); color: var(--text); }
+  .label-item.active {
+    background: var(--accent-dim);
+    color: var(--text);
+    border-right: 2px solid var(--accent);
+  }
+
+  .label-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .label-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .label-count {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+  .label-item.active .label-count { color: var(--accent); }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── ARTIST LIST ── */
+  .artist-list {
+    grid-area: list;
+    overflow-y: auto;
+    padding: 14px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  /* ── VIEW TOGGLE ── */
+  .view-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3px;
+    gap: 3px;
+  }
+  .view-btn {
+    font-family: var(--font-display);
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0;
+    padding: 9px 6px; border-radius: 6px; border: none;
+    background: transparent; color: var(--text-muted);
+    cursor: pointer; transition: all 0.15s;
+    text-align: center; line-height: 1;
+  }
+  .view-btn.active {
+    background: var(--accent); color: #fff;
+    box-shadow: 0 1px 10px rgba(255, 45, 120, 0.3);
+  }
+  .view-btn:hover:not(.active) { color: var(--text); background: var(--card); }
+
+  /* ── LABELS VIEW — two-panel directory ── */
+  .app.view-labels { grid-template-columns: 210px 1fr; }
+  .app.view-labels .detail-panel { display: none; }
+  .app.view-labels .list-meta { display: none; }
+  .app.view-labels .list-title-section { display: none !important; }
+  .app.view-labels #artist-cards { display: none; }
+  .app.view-labels .sidebar-section { display: none; }
+  .app.view-labels #label-list { display: none; }
+  .app.view-labels main.artist-list {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    overflow: hidden;
+    padding: 0;
+  }
+
+  /* Sidebar view toggle */
+  .sidebar-view-toggle {
+    padding: 10px 12px 12px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 6px;
+  }
+
+  /* Label navigator (left column) */
+  #label-nav {
+    display: none;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    background: var(--surface);
+  }
+  .app.view-labels #label-nav { display: flex; }
+
+  .label-nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 14px;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    transition: background 0.1s, border-color 0.1s;
+    min-width: 0;
+  }
+  .label-nav-item:hover { background: var(--card); }
+  .label-nav-item.active {
+    border-left-color: var(--accent);
+    background: var(--card);
+  }
+  .label-nav-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .label-nav-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .label-nav-name {
+    font-size: 12px; font-weight: 600; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .label-nav-meta {
+    font-size: 10px; font-family: var(--font-mono);
+    color: var(--text-dim); letter-spacing: 0.03em;
+  }
+
+  /* Contacts panel (right column) */
+  #label-contacts {
+    display: none;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .app.view-labels #label-contacts { display: flex; }
+
+  .lcp-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky; top: 0; z-index: 2;
+    border-left: 3px solid transparent;
+  }
+  .lcp-header-top {
+    display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .lcp-label-name {
+    font-size: 26px; font-weight: 700; font-family: var(--font-name);
+    letter-spacing: -0.02em; color: var(--text); line-height: 1; word-break: break-word;
+  }
+  .lcp-count {
+    font-size: 10px; font-family: var(--font-mono);
+    color: var(--text-dim); letter-spacing: 0.05em;
+    background: var(--card); border: 1px solid var(--border);
+    padding: 3px 8px; border-radius: 20px; flex-shrink: 0;
+  }
+  .lcp-artists {
+    display: flex; flex-wrap: wrap; gap: 5px;
+  }
+  .lcp-artist-tag {
+    font-size: 10px; font-family: var(--font-mono);
+    color: var(--text-muted);
+    background: var(--card); border: 1px solid var(--border);
+    padding: 2px 8px; border-radius: 3px;
+  }
+
+  .lcp-list {
+    display: flex; flex-direction: column;
+    gap: 8px; padding: 14px 16px;
+    counter-reset: contact-index;
+  }
+  .lcp-contact {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--lcp-accent, var(--border-light));
+    border-radius: 10px;
+    padding: 15px 16px 15px 15px;
+    display: flex; flex-direction: column; gap: 10px;
+    position: relative;
+    counter-increment: contact-index;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .lcp-contact::after {
+    content: counter(contact-index, decimal-leading-zero);
+    position: absolute; top: 15px; right: 15px;
+    font-family: var(--font-mono); font-size: 10px;
+    color: var(--text-dim); letter-spacing: 0.04em;
+    pointer-events: none;
+  }
+  .lcp-contact:hover {
+    border-color: var(--border-light);
+    border-left-color: var(--lcp-accent, var(--accent));
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+  .lcp-contact-left { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .lcp-contact-header {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding-right: 28px;
+  }
+  .lcp-contact-name { font-size: 15px; font-weight: 700; font-family: var(--font-name); color: var(--text); }
+  .lcp-contact-role {
+    font-size: 9px; font-family: var(--font-mono); text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--text-muted);
+    background: var(--surface); border: 1px solid var(--border-light);
+    padding: 2px 7px; border-radius: 3px; flex-shrink: 0;
+  }
+  .lcp-contact-via {
+    font-size: 10px; font-family: var(--font-mono); color: var(--text-dim);
+  }
+  .lcp-fields { display: flex; flex-direction: column; gap: 5px; }
+  .lcp-field {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--text-muted);
+  }
+  .lcp-field svg { color: var(--text-dim); flex-shrink: 0; }
+  .lcp-field a { color: var(--text-muted); text-decoration: none; }
+  .lcp-field a:hover { color: var(--accent); }
+  .lcp-copy {
+    font-size: 9px; font-family: var(--font-mono); font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    padding: 2px 7px; border-radius: 3px;
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--text-dim); cursor: pointer;
+    transition: all 0.12s; white-space: nowrap; flex-shrink: 0;
+  }
+  .lcp-copy:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .lcp-notes {
+    font-size: 11px; color: var(--text-dim); line-height: 1.55;
+    font-style: italic; padding-top: 2px;
+    border-top: 1px solid var(--border);
+  }
+  .lcp-empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    flex: 1; gap: 10px; color: var(--text-dim);
+    font-family: var(--font-mono); font-size: 12px;
+    padding: 60px 24px; text-align: center;
+  }
+  .lcp-empty-icon { font-size: 24px; color: var(--text-dim); }
+  .lcp-no-selection {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100%; gap: 8px; color: var(--text-dim);
+    font-family: var(--font-mono); font-size: 11px;
+  }
+
+  .list-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2px 4px 10px;
+  }
+  .sort-bar {
+    display: flex; gap: 1px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 5px; padding: 2px;
+  }
+  .sort-btn {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 3px 7px; border-radius: 3px; border: none;
+    background: transparent; color: var(--text-dim);
+    cursor: pointer; transition: all 0.12s; white-space: nowrap;
+  }
+  .sort-btn.active { background: var(--surface); color: var(--text); border: 1px solid var(--border-light); }
+  .sort-btn:hover:not(.active) { color: var(--text-muted); }
+  .drag-handle {
+    display: none; align-items: center; justify-content: center;
+    color: var(--text-dim); cursor: grab; padding-right: 8px;
+    font-size: 16px; flex-shrink: 0; line-height: 1;
+    user-select: none;
+  }
+  #artist-cards.sort-custom .drag-handle { display: flex; }
+  #artist-cards.sort-custom .artist-card { cursor: default; grid-template-columns: 20px 42px 1fr auto; }
+  .artist-card.drag-over { border-color: var(--accent) !important; }
+  .artist-card.dragging { opacity: 0.35; }
+
+  .artist-count {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+  }
+
+  .artist-card {
+    display: grid;
+    grid-template-columns: 42px 1fr auto;
+    align-items: center;
+    gap: 11px;
+    padding: 11px 13px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.12s;
+    text-align: left;
+    width: 100%;
+    font-family: var(--font-display);
+  }
+  .artist-card:hover { background: var(--card-hover); box-shadow: 0 2px 12px rgba(0,0,0,0.2); }
+  .artist-card.active { background: var(--card-hover); border-color: var(--accent); border-left-color: var(--accent) !important; }
+
+  .artist-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 7px;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+    border: 1px solid var(--border);
+  }
+
+  .artist-info { min-width: 0; }
+
+  .artist-name {
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-name);
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+    margin-bottom: 4px;
+  }
+
+  .artist-meta {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: nowrap;
+  }
+
+  .label-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  .contact-chip {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .artist-type-tag {
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+    font-family: var(--font-mono);
+    flex-shrink: 0;
+  }
+
+  /* ── DETAIL PANEL ── */
+  .detail-panel {
+    grid-area: detail;
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+    background: var(--surface);
+  }
+
+  .detail-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 10px;
+    color: var(--text-dim);
+  }
+  .detail-empty-icon {
+    font-size: 40px;
+    opacity: 0.2;
+    font-family: var(--font-mono);
+  }
+  .detail-empty p {
+    font-size: 12px;
+    font-family: var(--font-mono);
+    letter-spacing: 0.06em;
+  }
+
+  .detail-header {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    z-index: 5;
+  }
+
+  .detail-header-top {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .detail-header-info { flex: 1; min-width: 0; }
+
+  .detail-avatar-lg {
+    width: 46px;
+    height: 46px;
+    border-radius: 8px;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .detail-name {
+    font-size: 18px;
+    font-weight: 700;
+    font-family: var(--font-name);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin-bottom: 8px;
+  }
+
+  .detail-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    align-items: center;
+  }
+
+  .genre-tag {
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 500;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+
+  .detail-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 13px;
+  }
+
+  .detail-body { padding: 14px 20px 24px; }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+    margin-top: 18px;
+  }
+  .section-label:first-child { margin-top: 0; }
+  .notes-accordion {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 2px;
+  }
+  .section-label.toggleable {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; padding: 9px 12px;
+    cursor: pointer; user-select: none;
+    transition: background 0.12s, color 0.12s;
+    min-height: 36px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    margin: 0;
+  }
+  .notes-accordion.notes-collapsed .section-label.toggleable {
+    border-bottom: none;
+    border-radius: 8px;
+  }
+  .section-label.toggleable:hover {
+    color: var(--text-muted);
+    background: var(--card-hover);
+  }
+  .notes-chevron {
+    color: var(--text-dim);
+    transition: transform 0.18s ease, color 0.12s;
+    flex-shrink: 0;
+  }
+  .section-label.toggleable:hover .notes-chevron { color: var(--text-muted); }
+  .notes-chevron.collapsed { transform: rotate(-90deg); }
+
+  .artist-notes-box {
+    background: var(--surface);
+    border: none;
+    border-radius: 0;
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.65;
+    margin: 0;
+  }
+
+  .contact-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 13px 14px;
+    margin-bottom: 7px;
+    transition: border-color 0.15s;
+  }
+  .contact-card:hover { border-color: var(--border-light); }
+
+  .contact-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 5px;
+  }
+
+  .contact-name-role { flex: 1; min-width: 0; }
+
+  .contact-name {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .contact-role {
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 500;
+    margin-top: 2px;
+  }
+
+  .contact-actions-inline {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .contact-fields { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+
+  .contact-field {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    line-height: 1.3;
+  }
+  .contact-field svg { flex-shrink: 0; color: var(--text-dim); }
+  .contact-field a { color: var(--text-muted); text-decoration: none; transition: color 0.1s; }
+  .contact-field a:hover { color: var(--accent); }
+
+  .copy-btn-inline {
+    margin-left: auto;
+    flex-shrink: 0;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 10px;
+    cursor: pointer;
+    font-family: var(--font-display);
+    transition: all 0.1s;
+  }
+  .copy-btn-inline:hover { background: var(--card-hover); color: var(--accent); border-color: var(--accent); }
+
+  .contact-notes {
+    margin-top: 9px;
+    padding-top: 9px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    font-style: italic;
+  }
+
+  .icon-btn {
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 11px;
+    cursor: pointer;
+    font-family: var(--font-display);
+    transition: all 0.1s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    line-height: 1;
+  }
+  .icon-btn:hover { background: var(--card-hover); color: var(--text); border-color: var(--border-light); }
+  .icon-btn.danger:hover { background: rgba(255,60,60,0.1); border-color: rgba(255,60,60,0.4); color: #FF5050; }
+  .icon-btn.sm { padding: 3px 6px; font-size: 10px; }
+
+  .add-contact-btn {
+    width: 100%;
+    padding: 10px;
+    background: transparent;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    color: var(--text-dim);
+    font-size: 12px;
+    font-family: var(--font-display);
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    margin-top: 6px;
+    font-weight: 500;
+  }
+  .add-contact-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); border-style: solid; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(9,9,14,0.8);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(3px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    width: 500px;
+    max-width: 95vw;
+    max-height: 88vh;
+    overflow-y: auto;
+    transform: translateY(10px) scale(0.98);
+    transition: transform 0.18s;
+  }
+  .modal-overlay.open .modal { transform: translateY(0) scale(1); }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal-title { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; }
+  .modal-close {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: color 0.1s;
+    font-size: 16px;
+    line-height: 1;
+    font-family: monospace;
+  }
+  .modal-close:hover { color: var(--text); }
+
+  .modal-body { padding: 18px 20px; }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .form-group { margin-bottom: 13px; }
+  .form-group.full { grid-column: 1 / -1; }
+
+  label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    padding: 8px 11px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  textarea { resize: vertical; min-height: 72px; line-height: 1.5; }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  input::placeholder, textarea::placeholder { color: var(--text-dim); }
+  select option { background: var(--card); }
+
+  .modal-footer {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    padding: 13px 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── ELECTRON NATIVE WINDOW ── */
+  header { position: relative; }
+  .drag-region { display: none; }
+
+  /* titleBarStyle:'hidden' = no OS drag zone, CSS controls everything.
+     Make the whole header draggable, then carve out interactive children. */
+  .electron-app header {
+    padding-left: 92px;
+    -webkit-app-region: drag;
+  }
+  .electron-app header button,
+  .electron-app header input,
+  .electron-app header select,
+  .electron-app header label,
+  .electron-app header .user-chip,
+  .electron-app header .search-wrap,
+  .electron-app header .header-actions {
+    -webkit-app-region: no-drag;
+  }
+  .electron-app .logo {
+    cursor: default;
+  }
+
+  /* ── SCAN LOADING ── */
+  .scan-loading-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    background: var(--accent-dim);
+    border-bottom: 1px solid var(--accent-glow);
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--accent);
+  }
+  .scan-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--accent-glow);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    flex-shrink: 0;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── SETTINGS LINK ── */
+  .settings-btn {
+    padding: 7px 9px;
+    border-radius: 6px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .settings-btn:hover { color: var(--text); border-color: var(--border-light); }
+  .settings-btn.keyed { border-color: var(--green); color: var(--green); }
+
+  .api-key-note {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-top: 6px;
+  }
+  .api-key-note a { color: var(--accent); text-decoration: none; }
+  .api-key-note a:hover { text-decoration: underline; }
+
+  /* ── LABEL COLORS ── */
+  .lc-hybe     { background: rgba(74,158,255,0.14); color: #4A9EFF; }
+  .lc-sm       { background: rgba(168,85,247,0.14); color: #A855F7; }
+  .lc-yg       { background: rgba(255,184,0,0.14);  color: #FFB800; }
+  .lc-jyp      { background: rgba(0,217,126,0.14);  color: #00D97E; }
+  .lc-starship { background: rgba(255,45,120,0.14);  color: #FF2D78; }
+  .lc-cube     { background: rgba(255,100,50,0.14);  color: #FF6432; }
+  .lc-pledis   { background: rgba(100,200,255,0.14); color: #64C8FF; }
+  .lc-source   { background: rgba(200,200,100,0.14); color: #C8C864; }
+  .lc-kakao    { background: rgba(255,200,50,0.14);  color: #FFC832; }
+  .lc-ador     { background: rgba(200,120,255,0.14); color: #C878FF; }
+  .lc-default  { background: rgba(100,100,160,0.14); color: #7070C0; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%) translateY(70px);
+    background: var(--card);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 9px 16px;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    color: var(--green);
+    z-index: 200;
+    transition: transform 0.22s cubic-bezier(.34,1.56,.64,1);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── SCANNING PLACEHOLDER CARD ── */
+  .artist-card.scanning {
+    opacity: 0.6;
+    pointer-events: none;
+    cursor: default;
+    border-style: dashed;
+  }
+  .scanning-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--accent);
+  }
+  .dot-wave span {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent);
+    opacity: 0;
+    display: inline-block;
+    animation: dot-wave 1.4s ease-in-out infinite;
+  }
+  .dot-wave span:nth-child(2) { animation-delay: 0.15s; }
+  .dot-wave span:nth-child(3) { animation-delay: 0.30s; }
+  @keyframes dot-wave {
+    0%, 60%, 100% { opacity: 0; transform: translateY(0); }
+    30%            { opacity: 1; transform: translateY(-2px); }
+  }
+
+  /* ── MODAL TABS ── */
+  .modal-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+  }
+  .modal-tab {
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: var(--font-display);
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: -1px;
+  }
+  .modal-tab:hover { color: var(--text); }
+  .modal-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── EMPTY STATES ── */
+  .empty-list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 50px 20px;
+    color: var(--text-dim);
+    text-align: center;
+  }
+  .empty-list .ei { font-family: var(--font-mono); font-size: 28px; opacity: 0.2; }
+  .empty-list p { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+
+  /* ── CONFIRM DIALOG ── */
+  .confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(9,9,14,0.7);
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+  }
+  .confirm-overlay.open { opacity: 1; pointer-events: all; }
+  .confirm-box {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    padding: 22px 24px;
+    width: 360px;
+    max-width: 90vw;
+    transform: scale(0.97);
+    transition: transform 0.15s;
+  }
+  .confirm-overlay.open .confirm-box { transform: scale(1); }
+  .confirm-box h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+  .confirm-box p { font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 18px; }
+  .confirm-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 960px) {
+    .app {
+      grid-template-columns: 180px 1fr;
+      grid-template-areas: "header header" "sidebar list";
+    }
+    .detail-panel {
+      display: none;
+      position: fixed;
+      inset: 54px 0 0;
+      z-index: 50;
+      background: var(--surface);
+      border-left: none;
+    }
+    .detail-panel.mobile-open { display: block; }
+  }
+  @media (max-width: 580px) {
+    .app {
+      grid-template-columns: 1fr;
+      grid-template-areas: "header" "list";
+    }
+    aside { display: none; }
+  }
+
+  /* ── AUTH / SETUP OVERLAYS ── */
+  .fullscreen-overlay {
+    position: fixed; inset: 0; z-index: 500;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 0;
+  }
+  .fullscreen-overlay.hidden { display: none; }
+
+  .auth-box, .setup-box {
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    border-radius: 14px;
+    width: 380px;
+    max-width: 95vw;
+    overflow: hidden;
+  }
+  .auth-header, .setup-header {
+    padding: 28px 28px 20px;
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+  }
+  .auth-logo {
+    font-family: var(--font-mono);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .auth-logo span { color: var(--accent); }
+  .auth-subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+  }
+  .auth-body, .setup-body { padding: 22px 28px; }
+  .auth-footer, .setup-footer {
+    padding: 14px 28px 22px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .auth-switch {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+    padding-top: 4px;
+  }
+  .auth-switch button {
+    background: none; border: none; color: var(--accent);
+    cursor: pointer; font-size: 12px; font-family: var(--font-display);
+    text-decoration: underline; padding: 0;
+  }
+  .auth-error {
+    font-size: 12px; font-family: var(--font-mono);
+    color: #FF5555; min-height: 18px; margin-top: -4px;
+  }
+  .setup-note {
+    font-size: 11px; color: var(--text-muted); line-height: 1.55;
+    margin-top: 8px; font-family: var(--font-mono);
+  }
+
+  /* ── USER CHIP ── */
+  .user-chip {
+    display: flex; align-items: center; gap: 7px;
+    padding: 5px 10px; border-radius: 6px;
+    background: var(--card); border: 1px solid var(--border);
+    cursor: pointer; transition: all 0.15s; position: relative;
+  }
+  .user-chip:hover { border-color: var(--border-light); }
+  .user-avatar {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--accent-dim); border: 1px solid var(--accent-glow);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: var(--accent);
+    font-family: var(--font-mono); flex-shrink: 0;
+  }
+  .user-email {
+    font-size: 11px; color: var(--text-muted);
+    font-family: var(--font-mono); max-width: 130px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .user-menu {
+    position: absolute; top: calc(100% + 6px); right: 0;
+    background: var(--surface); border: 1px solid var(--border-light);
+    border-radius: 8px; padding: 6px; min-width: 160px;
+    z-index: 300; display: none; flex-direction: column; gap: 2px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .user-chip.open .user-menu { display: flex; }
+  .user-menu-item {
+    padding: 7px 10px; border-radius: 5px; font-size: 12px;
+    color: var(--text-muted); cursor: pointer; transition: all 0.1s;
+    background: none; border: none; text-align: left; width: 100%;
+    font-family: var(--font-display);
+  }
+  .user-menu-item:hover { background: var(--card); color: var(--text); }
+  .user-menu-item.danger:hover { color: #FF5555; background: rgba(255,85,85,0.08); }
+  .user-menu-sep { height: 1px; background: var(--border); margin: 3px 0; }
+
+  /* ── LISTS SIDEBAR ── */
+  .lists-section { padding: 10px 0 4px; }
+  .lists-section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 16px 6px; font-size: 10px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim);
+  }
+  .lists-add-btn {
+    background: none; border: none; color: var(--text-dim);
+    cursor: pointer; padding: 2px 4px; border-radius: 3px;
+    font-size: 14px; line-height: 1; transition: color 0.1s;
+  }
+  .lists-add-btn:hover { color: var(--accent); }
+  .list-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 16px; cursor: pointer; transition: background 0.1s;
+    font-size: 12px; color: var(--text-muted); user-select: none;
+  }
+  .list-item:hover { background: var(--card); color: var(--text); }
+  .list-item.active {
+    background: var(--accent-dim); color: var(--text);
+    border-right: 2px solid var(--accent);
+  }
+  .list-item-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .list-role-badge {
+    font-size: 9px; font-family: var(--font-mono); font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase; flex-shrink: 0;
+    padding: 1px 5px; border-radius: 2px;
+  }
+  .list-role-badge.owner  { color: var(--accent); background: var(--accent-dim); }
+  .list-role-badge.editor { color: #00D97E; background: rgba(0,217,126,0.1); }
+  .list-role-badge.viewer { color: var(--text-dim); background: var(--card); }
+
+  .sidebar-divider { height: 1px; background: var(--border); margin: 8px 0; }
+
+  /* ── SHARE MODAL ── */
+  .share-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .share-row:last-child { border-bottom: none; }
+  .share-email { flex: 1; color: var(--text); font-family: var(--font-mono); font-size: 11px; }
+  .share-role-badge {
+    font-size: 10px; font-family: var(--font-mono); font-weight: 600;
+    padding: 2px 6px; border-radius: 3px; text-transform: uppercase;
+  }
+  .share-role-badge.editor { color: #00D97E; background: rgba(0,217,126,0.1); }
+  .share-role-badge.viewer { color: var(--text-muted); background: var(--card); border: 1px solid var(--border); }
+  .share-remove-btn {
+    background: none; border: none; color: var(--text-dim);
+    cursor: pointer; padding: 3px 6px; border-radius: 3px; font-size: 14px; line-height: 1;
+    transition: color 0.1s;
+  }
+  .share-remove-btn:hover { color: #FF5555; }
+  .share-add-row { display: flex; gap: 8px; margin-top: 12px; }
+  .share-add-row input { flex: 1; }
+  .share-add-row select { width: auto; flex-shrink: 0; }
+  .share-section-label {
+    font-size: 10px; font-family: var(--font-mono); font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+  .share-divider { border-top: 1px solid var(--border); margin: 20px 0; }
+  .share-token-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px;
+  }
+  .share-token-row:last-child { border-bottom: none; }
+  .share-token-link {
+    flex: 1; font-family: var(--font-mono); font-size: 10px;
+    color: var(--accent); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    cursor: pointer;
+  }
+  .share-token-link:hover { text-decoration: underline; }
+
+  /* ── ROLE-RESTRICTED UI ── */
+  .role-viewer .btn-primary { display: none !important; }
+  .role-viewer .icon-btn.danger { display: none !important; }
+  .role-viewer .icon-btn[data-action="edit-artist"] { display: none !important; }
+  .role-viewer .icon-btn[data-action="edit-contact"] { display: none !important; }
+  .role-viewer .icon-btn[data-action="scan-web"] { display: none !important; }
+  .role-viewer .add-contact-btn { display: none !important; }
+  .role-viewer #artist-add-footer-btn { display: none !important; }
+
+  /* ── DASHBOARD ── */
+  .dashboard-overlay {
+    position: fixed; inset: 0; z-index: 400;
+    background: var(--bg); overflow-y: auto;
+  }
+  .dashboard-overlay.hidden { display: none; }
+
+  .dashboard-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 40px; border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; background: var(--bg); z-index: 5;
+  }
+  .electron-app .dashboard-topbar {
+    padding-left: 104px;
+  }
+  .dashboard-content {
+    max-width: 900px; margin: 0 auto; padding: 44px 40px 60px;
+  }
+  .dashboard-greeting {
+    font-size: 26px; font-weight: 700; letter-spacing: -0.03em;
+    margin-bottom: 6px;
+  }
+  .dashboard-sub {
+    font-size: 13px; color: var(--text-muted); font-family: var(--font-mono);
+    margin-bottom: 36px;
+  }
+  .dash-section-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--text-dim); margin-bottom: 14px;
+  }
+  .list-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px; margin-bottom: 36px;
+  }
+  .list-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px 20px 16px;
+    cursor: pointer; transition: all 0.15s;
+    display: flex; flex-direction: column; gap: 10px;
+    min-height: 110px;
+  }
+  .list-card:hover { background: var(--card-hover); border-color: var(--border-light); transform: translateY(-1px); }
+  .list-card.new-card {
+    border-style: dashed; align-items: center; justify-content: center;
+    flex-direction: row; gap: 7px;
+    color: var(--text-dim); font-size: 13px; font-weight: 500;
+    min-height: 110px;
+  }
+  .list-card.new-card:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); transform: none; }
+  .list-card-name {
+    font-size: 15px; font-weight: 700; letter-spacing: -0.02em;
+    color: var(--text); line-height: 1.2; flex: 1;
+  }
+  .list-card-footer { display: flex; align-items: center; gap: 8px; }
+  .list-card-count {
+    font-family: var(--font-mono); font-size: 10px; color: var(--text-dim);
+    margin-left: auto;
+  }
+  .list-card-actions {
+    position: absolute; top: 12px; right: 12px;
+    display: none; gap: 4px;
+  }
+  .list-card:hover .list-card-actions { display: flex; }
+  .list-card-wrap { position: relative; }
+
+  /* ── BACK BUTTON ── */
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12px; font-family: var(--font-mono);
+    color: var(--text-muted); background: none; border: none;
+    cursor: pointer; padding: 4px 8px; border-radius: 5px;
+    transition: color 0.1s;
+  }
+  .back-btn:hover { color: var(--text); }
+
+  /* ── SETTINGS OVERLAY ── */
+  .settings-overlay {
+    position: fixed; inset: 0; z-index: 450;
+    background: var(--bg);
+    display: flex; flex-direction: column;
+    opacity: 0; pointer-events: none;
+    transform: translateY(14px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+  .settings-overlay.open { opacity: 1; pointer-events: all; transform: translateY(0); }
+
+  .settings-topbar {
+    height: 54px; flex-shrink: 0;
+    display: flex; align-items: center; gap: 14px;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: relative;
+  }
+  .electron-app .settings-topbar {
+    padding-left: 104px;
+  }
+
+  .settings-topbar-title {
+    font-size: 13px; font-weight: 600;
+    letter-spacing: 0.01em; color: var(--text-muted);
+  }
+
+  .settings-layout {
+    flex: 1; display: flex; overflow: hidden;
+  }
+
+  .settings-sidebar {
+    width: 180px; flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    padding: 18px 0;
+    overflow-y: auto;
+  }
+
+  .settings-nav-section {
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--text-dim); padding: 0 16px 8px;
+  }
+
+  .settings-nav-item {
+    display: flex; align-items: center;
+    padding: 8px 16px;
+    font-size: 13px; font-weight: 500;
+    color: var(--text-muted);
+    background: none;
+    border: none; border-right: 2px solid transparent;
+    cursor: pointer; width: 100%; text-align: left;
+    font-family: var(--font-display);
+    transition: all 0.1s;
+  }
+  .settings-nav-item:hover { color: var(--text); background: var(--card); }
+  .settings-nav-item.active {
+    color: var(--text);
+    background: var(--accent-dim);
+    border-right-color: var(--accent);
+  }
+
+  .settings-content {
+    flex: 1; overflow-y: auto;
+    padding: 44px 60px;
+  }
+
+  .settings-page-title {
+    font-size: 22px; font-weight: 700;
+    letter-spacing: -0.03em; color: var(--text);
+    margin-bottom: 36px; line-height: 1;
+  }
+
+  .settings-group { margin-bottom: 36px; }
+
+  .settings-group-label {
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 2px;
+  }
+
+  .settings-row {
+    display: flex; align-items: center;
+    justify-content: space-between; gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-row-left { flex: 1; min-width: 0; }
+  .settings-row-label { font-size: 13px; color: var(--text); font-weight: 500; }
+  .settings-row-desc {
+    font-size: 11px; color: var(--text-muted);
+    font-family: var(--font-mono); margin-top: 3px; line-height: 1.5;
+  }
+  .settings-row-value {
+    font-size: 12px; color: var(--text-muted);
+    font-family: var(--font-mono); flex-shrink: 0;
+  }
+
+  .settings-danger-group {
+    margin-top: 48px; padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+  .settings-danger-label {
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: rgba(255,80,80,0.6); margin-bottom: 2px;
+  }
+
+  /* Dashboard settings icon button */
+  .dash-settings-btn {
+    padding: 6px 8px; border-radius: 5px;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text-muted); cursor: pointer;
+    transition: all 0.15s; display: inline-flex; align-items: center;
+  }
+  .dash-settings-btn:hover { color: var(--text); border-color: var(--border-light); }
+
+  /* ── LIST TITLE (editable document title at top of center column) ── */
+  .list-title-section {
+    padding: 18px 16px 2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .list-title-display {
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--text);
+    font-family: var(--font-display);
+    cursor: text;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.18s;
+    padding-bottom: 1px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  .list-title-display:hover {
+    border-bottom-color: var(--border-light);
+  }
+  .list-title-edit-icon {
+    flex-shrink: 0;
+    color: var(--text-dim);
+    opacity: 0;
+    transition: opacity 0.15s;
+    pointer-events: none;
+  }
+  .list-title-section:hover .list-title-edit-icon { opacity: 1; }
+  .list-title-input {
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--text);
+    font-family: var(--font-display);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid var(--accent);
+    border-radius: 0;
+    padding: 0 0 1px;
+    outline: none;
+    flex: 1;
+    min-width: 0;
+    display: none;
+  }
+
+  /* ── LIST LOADING ── */
+  .list-loading {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; height: 100%; gap: 12px;
+    color: var(--text-dim);
+  }
+  .list-loading p { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <header>
+    <button class="back-btn" id="back-to-lists-btn" onclick="showDashboard()" style="display:none">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      Lists
+    </button>
+    <div class="logo">K<span>:</span>CONTACTS</div>
+    <div class="search-wrap">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="search" placeholder="Artists, labels, contacts, roles…">
+      <span class="shortcut-hint">⌘F</span>
+    </div>
+    <div class="header-actions">
+      <span id="scan-queue-badge" style="display:none;font-size:10px;font-family:var(--font-mono);color:var(--text-muted);letter-spacing:0.04em;white-space:nowrap;align-items:center;gap:5px">
+        <div class="scan-spinner" style="width:8px;height:8px;border-width:1.5px;flex-shrink:0"></div>
+        <span id="scan-queue-badge-text"></span>
+      </span>
+      <button class="btn btn-ghost" id="share-list-btn" onclick="openShareModal()" style="display:none;font-size:11px;padding:5px 12px;gap:5px">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        Share
+      </button>
+      <button class="dash-settings-btn" id="header-settings-btn" onclick="openSettings()" title="Settings (⌘,)" style="display:none">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+      <div class="user-chip" id="user-chip" onclick="toggleUserMenu()" style="display:none">
+        <div class="user-avatar" id="user-avatar"></div>
+        <span class="user-email" id="user-email-label"></span>
+        <div class="user-menu" id="user-menu">
+          <div class="user-menu-sep"></div>
+          <button class="user-menu-item danger" onclick="doSignOut()">Sign Out</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <aside>
+    <div class="lists-section" id="lists-section" style="display:none">
+      <div class="lists-section-header">
+        Lists
+        <button class="lists-add-btn" onclick="createNewList()" title="New list">+</button>
+      </div>
+      <div id="lists-list"></div>
+      <div class="sidebar-divider"></div>
+    </div>
+    <div class="sidebar-view-toggle">
+      <div class="view-toggle">
+        <button class="view-btn active" id="view-btn-artists" onclick="setListView('artists')">Artists</button>
+        <button class="view-btn"        id="view-btn-labels"  onclick="setListView('labels')">Labels</button>
+      </div>
+    </div>
+    <div class="sidebar-section">Labels</div>
+    <div id="label-list"></div>
+    <div class="sidebar-footer">
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="openArtistModal()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        Add Artist
+      </button>
+    </div>
+  </aside>
+
+  <!-- ARTIST LIST -->
+  <main class="artist-list">
+    <div class="list-title-section" id="list-title-section" style="display:none">
+      <span class="list-title-display" id="list-title-display" onclick="startEditListName()" title="Click to rename"></span>
+      <svg class="list-title-edit-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      <input type="text" class="list-title-input" id="list-title-input" onblur="saveListName()" onkeydown="listTitleKeydown(event)">
+    </div>
+    <div class="list-meta">
+      <span class="artist-count" id="artist-count"></span>
+      <div class="sort-bar" id="sort-bar">
+        <button class="sort-btn active" data-sort="name"   onclick="setSortMode('name')">Name</button>
+        <button class="sort-btn"        data-sort="date"   onclick="setSortMode('date')">Date</button>
+        <button class="sort-btn"        data-sort="label"  onclick="setSortMode('label')">Label</button>
+        <button class="sort-btn"        data-sort="custom" onclick="setSortMode('custom')">Custom</button>
+      </div>
+    </div>
+    <div id="artist-cards"></div>
+    <div id="label-nav"></div>
+    <div id="label-contacts"></div>
+  </main>
+
+  <!-- DETAIL PANEL -->
+  <div class="detail-panel" id="detail-panel">
+    <div class="detail-empty" id="detail-empty">
+      <div class="detail-empty-icon">◈</div>
+      <p>select an artist</p>
+    </div>
+    <div id="detail-content" style="display:none"></div>
+  </div>
+
+</div>
+
+<!-- MODAL: Artist -->
+<div class="modal-overlay" id="artist-modal" onclick="handleOverlayClick(event,'artist-modal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="artist-modal-title">Add Artist</div>
+      <button class="modal-close" onclick="closeModal('artist-modal')">✕</button>
+    </div>
+    <div class="modal-tabs" id="artist-modal-tabs">
+      <button class="modal-tab active" id="tab-btn-auto" onclick="switchArtistTab('auto')">Auto-Fill</button>
+      <button class="modal-tab" id="tab-btn-bulk" onclick="switchArtistTab('bulk')">Bulk Import</button>
+      <button class="modal-tab" id="tab-btn-manual" onclick="switchArtistTab('manual')">Manual</button>
+    </div>
+    <!-- Auto-fill pane -->
+    <div id="artist-tab-auto" class="modal-body">
+      <p style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:16px">Type an artist or group name — we'll find their label, genres, and direct A&R contacts automatically.</p>
+      <div class="form-group">
+        <label>Artist / Group Name</label>
+        <input type="text" id="autofill-name" placeholder="e.g. aespa, NewJeans, TWICE">
+      </div>
+      <div id="autofill-status" style="min-height:28px;margin-top:6px"></div>
+    </div>
+    <!-- Bulk import pane -->
+    <div id="artist-tab-bulk" class="modal-body" style="display:none">
+      <p style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:16px">One artist or group name per line. They'll be added to a queue and scanned one at a time.</p>
+      <div class="form-group">
+        <label>Artist Names</label>
+        <textarea id="bulk-names" placeholder="BTS&#10;BLACKPINK&#10;TWICE&#10;aespa&#10;NewJeans" style="min-height:180px;resize:vertical"></textarea>
+      </div>
+      <div id="bulk-status" style="min-height:20px;margin-top:4px;font-size:12px;font-family:var(--font-mono);color:var(--text-muted)"></div>
+    </div>
+    <!-- Manual pane -->
+    <div id="artist-tab-manual" class="modal-body" style="display:none">
+      <input type="hidden" id="artist-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Artist / Group Name *</label>
+          <input type="text" id="artist-name" placeholder="e.g. BLACKPINK">
+        </div>
+        <div class="form-group">
+          <label>Type</label>
+          <select id="artist-type">
+            <option value="group">Group</option>
+            <option value="solo">Solo Artist</option>
+            <option value="duo">Duo</option>
+            <option value="unit">Sub-Unit</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Label *</label>
+          <input type="text" id="artist-label" placeholder="e.g. HYBE" list="label-datalist">
+          <datalist id="label-datalist"></datalist>
+        </div>
+        <div class="form-group">
+          <label>Country</label>
+          <input type="text" id="artist-country" placeholder="South Korea">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Genres (comma separated)</label>
+        <input type="text" id="artist-genres" placeholder="K-Pop, Hip-Hop, R&B">
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <textarea id="artist-notes" placeholder="Submission preferences, general notes…"></textarea>
+      </div>
+    </div>
+    <!-- Footer: bulk -->
+    <div class="modal-footer" id="artist-footer-bulk" style="display:none">
+      <button class="btn btn-ghost" onclick="closeModal('artist-modal')">Cancel</button>
+      <button class="btn btn-primary" id="bulk-btn" onclick="bulkImportArtists()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        Queue All &amp; Import
+      </button>
+    </div>
+    <!-- Footer: auto-fill -->
+    <div class="modal-footer" id="artist-footer-auto">
+      <button class="btn btn-ghost" onclick="closeModal('artist-modal')">Cancel</button>
+      <button class="btn btn-primary" id="autofill-btn" onclick="autoFillArtist()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Find &amp; Add Artist
+      </button>
+    </div>
+    <!-- Footer: manual -->
+    <div class="modal-footer" id="artist-footer-manual" style="display:none">
+      <button class="btn btn-ghost" onclick="scanWebFromForm()" title="Auto-scan A&R contacts for this artist" style="margin-right:auto;gap:5px">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Scan for Contacts
+      </button>
+      <button class="btn btn-ghost" onclick="closeModal('artist-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveArtist()">Save Artist</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Contact -->
+<div class="modal-overlay" id="contact-modal" onclick="handleOverlayClick(event,'contact-modal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="contact-modal-title">Add Contact</div>
+      <button class="modal-close" onclick="closeModal('contact-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="contact-id">
+      <input type="hidden" id="contact-artist-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Name *</label>
+          <input type="text" id="contact-name" placeholder="Full name">
+        </div>
+        <div class="form-group">
+          <label>Role / Title</label>
+          <input type="text" id="contact-role" placeholder="e.g. A&R Manager" list="role-datalist">
+          <datalist id="role-datalist">
+            <option value="A&R Manager">
+            <option value="Senior A&R">
+            <option value="A&R Director">
+            <option value="VP of A&R">
+            <option value="Head of A&R">
+            <option value="A&R Coordinator">
+            <option value="Label Manager">
+            <option value="Artist Manager">
+            <option value="International A&R">
+            <option value="Creative Director">
+            <option value="Music Supervisor">
+            <option value="Publishing Contact">
+            <option value="Sync Licensing">
+          </datalist>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="contact-email" placeholder="email@label.com">
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="tel" id="contact-phone" placeholder="+82-2-…">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Instagram / Socials</label>
+        <input type="text" id="contact-social" placeholder="@handle">
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <textarea id="contact-notes" placeholder="Best time to reach, submission preferences, how you met…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('contact-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveContact()">Save Contact</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DIALOG -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <h3 id="confirm-title">Confirm</h3>
+    <p id="confirm-msg"></p>
+    <div class="confirm-actions">
+      <button class="btn btn-ghost" onclick="closeConfirm(false)">Cancel</button>
+      <button class="btn" id="confirm-ok-btn" onclick="closeConfirm(true)" style="background:#FF5050;color:white">Delete</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- TEXT INPUT PROMPT (replaces window.prompt which is blocked in Electron) -->
+<div class="confirm-overlay" id="prompt-overlay">
+  <div class="confirm-box">
+    <h3 id="prompt-title">Enter name</h3>
+    <input type="text" id="prompt-input" style="width:100%;margin:10px 0 14px;padding:8px 10px;background:var(--card);border:1px solid var(--border-light);border-radius:5px;color:var(--text);font-family:var(--font-display);font-size:13px;outline:none" onkeydown="if(event.key==='Enter')closePrompt(true);else if(event.key==='Escape')closePrompt(false)">
+    <div class="confirm-actions">
+      <button class="btn btn-ghost" onclick="closePrompt(false)">Cancel</button>
+      <button class="btn btn-primary" onclick="closePrompt(true)" id="prompt-ok-btn">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- DASHBOARD -->
+<div class="dashboard-overlay hidden" id="dashboard-overlay">
+  <div class="dashboard-topbar">
+    <div class="auth-logo" style="font-size:15px">K<span style="color:var(--accent)">:</span>CONTACTS</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span id="dashboard-email" style="font-size:11px;font-family:var(--font-mono);color:var(--text-muted)"></span>
+      <button class="dash-settings-btn" onclick="openSettings()" title="Settings (⌘,)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+      <button class="btn btn-ghost" style="font-size:11px;padding:5px 12px" onclick="doSignOut()">Sign Out</button>
+    </div>
+  </div>
+  <div class="dashboard-content">
+    <div class="dashboard-greeting" id="dashboard-greeting">Welcome back.</div>
+    <div class="dashboard-sub" id="dashboard-sub"></div>
+    <div id="dashboard-body"></div>
+  </div>
+</div>
+
+<!-- SETUP OVERLAY (enter Supabase credentials) -->
+<div class="fullscreen-overlay hidden" id="setup-overlay">
+  <div class="setup-box">
+    <div class="setup-header">
+      <div class="auth-logo">K<span>:</span>CONTACTS</div>
+      <div class="auth-subtitle">Connect your database to get started</div>
+    </div>
+    <div class="setup-body">
+      <div class="form-group">
+        <label>Supabase Project URL</label>
+        <input type="text" id="setup-url" placeholder="https://xxxx.supabase.co">
+      </div>
+      <div class="form-group">
+        <label>Supabase Anon Key</label>
+        <input type="password" id="setup-anon-key" placeholder="eyJ…">
+      </div>
+      <p class="setup-note">Create a free project at supabase.com → Settings → API to get these values. Run schema.sql in your project's SQL Editor first.</p>
+      <div class="auth-error" id="setup-error"></div>
+    </div>
+    <div class="setup-footer">
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="saveSetup()">Connect</button>
+    </div>
+  </div>
+</div>
+
+<!-- AUTH OVERLAY (sign in / sign up) -->
+<div class="fullscreen-overlay hidden" id="auth-overlay">
+  <div class="auth-box">
+    <div class="auth-header">
+      <div class="auth-logo">K<span>:</span>CONTACTS</div>
+      <div class="auth-subtitle" id="auth-subtitle">Sign in to your account</div>
+    </div>
+    <div class="auth-body">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="auth-email" placeholder="you@example.com" onkeydown="authKeydown(event)">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="auth-password" placeholder="••••••••" onkeydown="authKeydown(event)">
+      </div>
+      <div class="auth-error" id="auth-error"></div>
+    </div>
+    <div class="auth-footer">
+      <button class="btn btn-primary" id="auth-submit-btn" style="width:100%;justify-content:center" onclick="authSubmit()">Sign In</button>
+      <div class="auth-switch">
+        <span id="auth-switch-label">Don't have an account?</span>
+        <button onclick="toggleAuthMode()">Sign Up</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Share List -->
+<div class="modal-overlay" id="share-modal" onclick="handleOverlayClick(event,'share-modal')">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title" id="share-modal-title">Share List</div>
+      <button class="modal-close" onclick="closeModal('share-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Email sharing -->
+      <div class="share-section-label">Share by email</div>
+      <div id="share-list-rows"></div>
+      <div class="share-add-row">
+        <input type="email" id="share-email-input" placeholder="colleague@example.com">
+        <select id="share-role-select">
+          <option value="editor">Editor</option>
+          <option value="viewer">Viewer</option>
+        </select>
+        <button class="btn btn-primary" onclick="addShareSubmit()">Invite</button>
+      </div>
+      <div class="auth-error" id="share-error" style="margin-top:8px"></div>
+
+      <!-- Divider -->
+      <div class="share-divider"></div>
+
+      <!-- Link sharing -->
+      <div class="share-section-label">Share by link</div>
+      <p style="font-size:11px;color:var(--text-dim);font-family:var(--font-mono);margin:0 0 12px">Anyone with the link can join this list once they sign in.</p>
+      <div id="share-token-rows"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <select id="token-role-select" style="flex:1">
+          <option value="editor">Editor link</option>
+          <option value="viewer">Viewer link</option>
+        </select>
+        <button class="btn btn-ghost" style="font-size:11px;padding:5px 14px;flex-shrink:0" onclick="createShareLink()">Generate Link</button>
+      </div>
+      <div class="auth-error" id="token-error" style="margin-top:8px"></div>
+
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS OVERLAY -->
+<div class="settings-overlay" id="settings-overlay">
+  <div class="settings-topbar">
+    <button class="back-btn" onclick="closeSettings()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      Back
+    </button>
+    <span class="settings-topbar-title">Settings</span>
+  </div>
+  <div class="settings-layout">
+    <div class="settings-sidebar">
+      <div class="settings-nav-section">General</div>
+      <button class="settings-nav-item active" data-panel="account" onclick="switchSettingsPanel('account')">Account</button>
+      <button class="settings-nav-item" data-panel="about" onclick="switchSettingsPanel('about')">About</button>
+    </div>
+    <div class="settings-content" id="settings-panel-content"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// LABEL COLOR SYSTEM
+// ═══════════════════════════════════════════
+const LABEL_MAP = [
+  [['hybe','big hit','bighit','ador','source music','belift','pledis','koz'], {cls:'lc-hybe', dot:'#4A9EFF'}],
+  [['sm entertainment','sm ent','smtown','sm label'], {cls:'lc-sm', dot:'#A855F7'}],
+  [['yg entertainment','yg ent','yg'], {cls:'lc-yg', dot:'#FFB800'}],
+  [['jyp entertainment','jyp ent','jype'], {cls:'lc-jyp', dot:'#00D97E'}],
+  [['starship'], {cls:'lc-starship', dot:'#FF2D78'}],
+  [['cube'], {cls:'lc-cube', dot:'#FF6432'}],
+  [['kakao','iland','iland2'], {cls:'lc-kakao', dot:'#FFC832'}],
+];
+
+function getLabelStyle(label) {
+  const lc = label.toLowerCase();
+  for (const [keys, style] of LABEL_MAP) {
+    if (keys.some(k => lc.includes(k))) return style;
+  }
+  const idx = [...label].reduce((a,c) => a + c.charCodeAt(0), 0) % PALETTES.length;
+  return PALETTES[idx];
+}
+
+const PALETTES = [
+  {cls:'lc-default', dot:'#7070C0'},
+  {cls:'lc-hybe', dot:'#4A9EFF'},
+  {cls:'lc-sm', dot:'#A855F7'},
+  {cls:'lc-yg', dot:'#FFB800'},
+  {cls:'lc-jyp', dot:'#00D97E'},
+  {cls:'lc-cube', dot:'#FF6432'},
+];
+
+// ═══════════════════════════════════════════
+// SAMPLE DATA
+// ═══════════════════════════════════════════
+const SAMPLE_DATA = [
+  {
+    id: 'bts', name: 'BTS', type: 'group', label: 'HYBE / Big Hit Music',
+    genres: ['K-Pop','Hip-Hop','R&B','Pop'], country: 'South Korea',
+    notes: 'Globally dominant act. Primarily work with in-house producers. Hard to place externally. HYBE email format: firstname.lastname@hybecorp.com. Members currently on solo schedules / military service — group activity limited.',
+    contacts: [
+      {id:'bts-1', name:'Bang Si-hyuk (Hitman Bang)', role:'Founder / Chairman, HYBE', email:'', phone:'+82-2-6191-5100', social:'', notes:'Top-level only. Approached through industry intermediaries. Not for cold outreach.'},
+      {id:'bts-2', name:'Pdogg', role:'Head Producer / A&R, Big Hit Music', email:'', phone:'', social:'@pdogg_hiphop', notes:'Primary BTS producer. Selective — best via industry intro. Active on Instagram.'},
+    ]
+  },
+  {
+    id: 'blackpink', name: 'BLACKPINK', type: 'group', label: 'YG Entertainment',
+    genres: ['K-Pop','Hip-Hop','Pop'], country: 'South Korea',
+    notes: 'Members renewed group contract with YG but pursue solo activities independently (Rosé → Atlantic, Lisa → RCA, Jennie → OA, Jisoo → BLISSOO). Group projects still with YG. Best pitch window when a new BP group album is announced.',
+    contacts: [
+      {id:'bp-1', name:'Teddy Park', role:'Head Producer, YG / THE BLACK LABEL', email:'', phone:'', social:'@teddypark', notes:'KEY creative on all BP group projects. Very selective. Best approached via mutual industry connection.'},
+      {id:'bp-2', name:'YG Global Submissions', role:'International A&R', email:'ygglobal@ygmail.net', phone:'+82-2-2135-9114', social:'', notes:'Confirmed public YG contact for international submissions and auditions.'},
+      {id:'bp-3', name:'YG Contact Portal', role:'General Business Inquiry', email:'', phone:'', social:'ygfamily.com/en/contact', notes:'Official YG contact form. Use for formal co-write or licensing pitches. Reference specific artist.'},
+    ]
+  },
+  {
+    id: 'twice', name: 'TWICE', type: 'group', label: 'JYP Entertainment',
+    genres: ['K-Pop','Dance-Pop','J-Pop'], country: 'South Korea',
+    notes: 'Active in Korea and Japan. JYP uses mostly in-house writers but has an official publisher submission route. Best for B-sides and Japanese releases which use more external writers.',
+    contacts: [
+      {id:'twice-1', name:'Park Jin-young (J.Y. Park)', role:'CEO / A&R, JYP Entertainment', email:'jyp@jype.com', phone:'+82-2-6196-9000', social:'@jinyoungpark', notes:'Hands-on creatively. Known to personally review submissions. Very discerning.'},
+      {id:'twice-2', name:'JYP Publishing', role:'Official Song Submission Portal', email:'publishing@jype.com', phone:'', social:'jyppub.com', notes:'VERIFIED official submission email. Include 2 demo tracks max. No released or previously submitted songs. This is the best route for external writers targeting JYP artists.'},
+      {id:'twice-3', name:'Bae Soo Jung', role:'A&R Representative, JYP', email:'', phone:'', social:'', notes:'Known A&R rep who has worked on GOT7, TWICE and more. Route through publishing@jype.com.'},
+    ]
+  },
+  {
+    id: 'stray-kids', name: 'Stray Kids', type: 'group', label: 'JYP Entertainment',
+    genres: ['K-Pop','Hip-Hop','EDM','Rock'], country: 'South Korea',
+    notes: '3RACHA (Bang Chan, Changbin, Han) self-produce most material. External writers mainly considered for tracks JYP Entertainment commissions directly. Pitch B-sides or collaborative tracks.',
+    contacts: [
+      {id:'skz-1', name:'JYP Publishing', role:'Official Song Submission', email:'publishing@jype.com', phone:'', social:'jyppub.com', notes:'VERIFIED submission email. Best route for external SKZ pitches — specify "Stray Kids" in subject. 3RACHA-dominated production means limited external slots.'},
+      {id:'skz-2', name:'JYP Entertainment', role:'Main A&R Line', email:'jyp@jype.com', phone:'+82-2-6196-9000', social:'', notes:'General JYP A&R inquiry. Use publishing@ for demos.'},
+    ]
+  },
+  {
+    id: 'ive', name: 'IVE', type: 'group', label: 'Starship Entertainment',
+    genres: ['K-Pop','Dance-Pop','Synth-Pop'], country: 'South Korea',
+    notes: 'One of the most commercially active girl groups right now. Starship actively seeking fresh material — mature, sophisticated pop sound. Good external placement opportunity.',
+    contacts: [
+      {id:'ive-1', name:'Starship Entertainment', role:'A&R / Business Inquiry', email:'starship-ent@hanmail.net', phone:'+82-2-592-4000', social:'starship-ent.com', notes:'VERIFIED Starship contact email and phone. Use for music submissions and business inquiries. Polished demos only.'},
+    ]
+  },
+  {
+    id: 'aespa', name: 'aespa', type: 'group', label: 'SM Entertainment',
+    genres: ['K-Pop','Electronic','Future Bass','Pop'], country: 'South Korea',
+    notes: 'Concept-driven "metaverse" group. SM launched Kreation Music Rights (KMR) in 2023 as their publishing arm — actively signs global writers and runs monthly song camps in Seoul. KMR is the best external access route to SM artists.',
+    contacts: [
+      {id:'aes-1', name:'Kreation Music Rights (KMR)', role:'SM Publishing Arm — Song Pitching', email:'', phone:'', social:'@kmr.hq / kreation.co.kr', notes:'BEST ROUTE. SM\'s publishing subsidiary launched 2023. 80+ writer signings. Monthly song camps in Seoul. Offices in Seoul, Stockholm, LA. Contact via kreation.co.kr contact form or DM @kmr.hq on Instagram.'},
+      {id:'aes-2', name:'SM Entertainment', role:'General A&R Inquiry', email:'sm@smtown.com', phone:'+82-2-6240-9700', social:'', notes:'Main SM office. Formal submissions only. Long response time (4-8 weeks). Reference KMR if possible.'},
+    ]
+  },
+  {
+    id: 'nct127', name: 'NCT 127', type: 'unit', label: 'SM Entertainment',
+    genres: ['K-Pop','Hip-Hop','R&B','Neo Soul'], country: 'South Korea',
+    notes: 'Most experimental SM sub-unit. SM occasionally accepts outside production for bolder sonic directions. KMR is the cleaner path for pitching.',
+    contacts: [
+      {id:'nct-1', name:'Kreation Music Rights (KMR)', role:'SM Publishing — Song Pitching', email:'', phone:'', social:'@kmr.hq / kreation.co.kr', notes:'Best route for any SM artist placement. Specify "NCT 127" in outreach. Monthly Seoul song camps.'},
+      {id:'nct-2', name:'SM Entertainment', role:'General A&R', email:'sm@smtown.com', phone:'+82-2-6240-9700', social:'', notes:'Fallback if KMR doesn\'t respond. Specify "NCT 127" in subject.'},
+    ]
+  },
+  {
+    id: 'gidle', name: '(G)I-DLE', type: 'group', label: 'Cube Entertainment',
+    genres: ['K-Pop','Hip-Hop','Experimental','World Music'], country: 'South Korea',
+    notes: 'Soyeon self-produces almost all material. External writers occasionally considered for album B-sides or unit tracks. Cube Music (publishing sub) is the pitch route. Experimental, culturally fused sound strongly preferred.',
+    contacts: [
+      {id:'idle-2', name:'Soyeon (Jeon Soyeon)', role:'Lead Producer / Member', email:'', phone:'', social:'@official_g_i_dle', notes:'Self-producing creative force. Has engaged with co-write discussions publicly. DM for experimental collab concepts — be specific about sound direction.'},
+    ]
+  },
+  {
+    id: 'newjeans', name: 'NewJeans', type: 'group', label: 'ADOR / HYBE',
+    genres: ['K-Pop','R&B','Jersey Club','Y2K Pop'], country: 'South Korea',
+    notes: 'SITUATION UPDATE (2025): Min Hee-jin departed as ADOR CEO after legal dispute with HYBE. Members returned to ADOR after losing contract appeal. Creative direction in transition. Pitch through HYBE main channels for now — new A&R leadership TBD.',
+    contacts: [
+    ]
+  },
+  {
+    id: 'seventeen', name: 'SEVENTEEN', type: 'group', label: 'PLEDIS / HYBE',
+    genres: ['K-Pop','R&B','Dance','Ballad'], country: 'South Korea',
+    notes: 'Self-producing group — SVTPRODUCETEAM (WOOZI, S.COUPS, Bumzu) handles most production. Very limited external placement slots. HYBE network is the only realistic route.',
+    contacts: [
+      {id:'sv-2', name:'Bumzu', role:'Lead Producer, SEVENTEEN', email:'', phone:'', social:'@bumzu_svt', notes:'Core SVTPRODUCETEAM member. Has done some external collaborations. Approach via industry intro or Instagram.'},
+    ]
+  },
+  {
+    id: 'txt', name: 'TOMORROW X TOGETHER', type: 'group', label: 'HYBE / Big Hit Music',
+    genres: ['K-Pop','Alternative','Rock','Electropop'], country: 'South Korea',
+    notes: 'More alternative, concept-driven sound than BTS. HYBE looks externally for TXT albums more than BTS. Good opportunity for alt-rock, cinematic, and dark electropop writers.',
+    contacts: [
+    ]
+  },
+  {
+    id: 'le-sserafim', name: 'LE SSERAFIM', type: 'group', label: 'Source Music / HYBE',
+    genres: ['K-Pop','Dance-Pop','Hip-Hop','Electronic'], country: 'South Korea',
+    notes: 'Powerful, attitude-forward group. Source Music is a smaller HYBE sub-label — potentially more accessible than Big Hit. Looking for confident, fierce, high-energy records.',
+    contacts: [
+      {id:'ls-1', name:'Source Music', role:'Label A&R', email:'', phone:'', social:'sourcemusic.com', notes:'Check sourcemusic.com/audition for current submission info. Smaller label = potentially faster response.'},
+    ]
+  },
+];
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let artists = [];
+let selectedId = null;
+let activeLabel = 'all';
+let searchQuery = '';
+let sortMode = 'name';
+let listView = 'artists';
+let selectedLabelName = null;
+let customOrder = [];
+let dragSrcId = null;
+let confirmCallback = null;
+
+// ── Scan queue ──
+const scanQueue = [];       // [{placeholderId, name}]
+let scanQueueRunning = false;
+const collapsedNotes = new Set();
+
+const GENERIC_EMAIL_PREFIXES = ['info@', 'contact@', 'hello@', 'admin@', 'general@', 'support@', 'inquiry@', 'noreply@'];
+
+// ── Cloud data layer ──────────────────────────────────────────────────────
+// artists[] is kept in memory; Supabase is the source of truth.
+// Writes are optimistic: update local state → re-render → sync in background.
+
+async function loadListArtists(listId) {
+  document.getElementById('artist-cards').innerHTML =
+    '<div class="list-loading"><div class="scan-spinner" style="width:18px;height:18px;border-width:2px"></div><p>Loading…</p></div>';
+  try {
+    artists = await window.kc.getArtists(listId);
+    render();
+  } catch (err) {
+    toast('Failed to load artists: ' + err.message, true);
+  }
+}
+
+async function syncArtist(artist) {
+  if (!currentListId || artist._scanning) return;
+  try { await window.kc.upsertArtist(currentListId, artist) }
+  catch (err) { toast('Sync error: ' + err.message, true) }
+}
+
+async function syncDeleteArtist(artistId) {
+  try { await window.kc.deleteArtist(artistId) }
+  catch (err) { toast('Sync error: ' + err.message, true) }
+}
+
+// Legacy localStorage (used as offline cache when no DB connection)
+function loadDataLocal() {
+  const s = localStorage.getItem('kpc-v5') || localStorage.getItem('kpc-v4');
+  artists = s ? JSON.parse(s) : [...SAMPLE_DATA];
+  artists.forEach(a => {
+    if (!a.contacts) return;
+    a.contacts = a.contacts.filter(c => {
+      const email = (c.email || '').toLowerCase();
+      return !email || !GENERIC_EMAIL_PREFIXES.some(p => email.startsWith(p));
+    });
+  });
+}
+function saveDataLocal() {
+  localStorage.setItem('kpc-v5', JSON.stringify(artists.filter(a => !a._scanning)));
+}
+
+// Compat shims used by older code paths (resolved at runtime)
+function saveData() { if (currentListId) { /* no-op; each mutation calls syncArtist */ } else { saveDataLocal(); } }
+
+// ═══════════════════════════════════════════
+// FILTERING
+// ═══════════════════════════════════════════
+// ─── SORT & DRAG ───
+function loadCustomOrder() {
+  if (!currentListId) return [];
+  try { return JSON.parse(localStorage.getItem(`kpc-order-${currentListId}`) || '[]'); }
+  catch { return []; }
+}
+function saveCustomOrder() {
+  if (!currentListId) return;
+  localStorage.setItem(`kpc-order-${currentListId}`, JSON.stringify(customOrder));
+}
+function loadSortMode() {
+  if (!currentListId) return 'name';
+  return localStorage.getItem(`kpc-sort-${currentListId}`) || 'name';
+}
+function saveSortMode() {
+  if (!currentListId) return;
+  localStorage.setItem(`kpc-sort-${currentListId}`, sortMode);
+}
+
+function setSortMode(mode) {
+  if (mode === 'custom' && customOrder.length === 0) {
+    customOrder = artists.filter(a => !a._scanning).map(a => a.id);
+    saveCustomOrder();
+  }
+  sortMode = mode;
+  saveSortMode();
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.toggle('active', b.dataset.sort === mode));
+  render();
+}
+
+function getSorted(list) {
+  const scanning = list.filter(a => a._scanning);
+  const real     = list.filter(a => !a._scanning);
+  let sorted;
+  if (sortMode === 'name') {
+    sorted = [...real].sort((a, b) => a.name.localeCompare(b.name));
+  } else if (sortMode === 'label') {
+    sorted = [...real].sort((a, b) => (a.label || '').localeCompare(b.label || '') || a.name.localeCompare(b.name));
+  } else if (sortMode === 'custom') {
+    sorted = [...real].sort((a, b) => {
+      const ai = customOrder.indexOf(a.id);
+      const bi = customOrder.indexOf(b.id);
+      if (ai === -1 && bi === -1) return 0;
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    });
+  } else {
+    sorted = real; // 'date' — newest first (DB returns descending updated_at)
+  }
+  return [...scanning, ...sorted];
+}
+
+function dragStart(e, id) {
+  dragSrcId = id;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => document.querySelector(`.artist-card[data-id="${id}"]`)?.classList.add('dragging'), 0);
+}
+function dragEnd() {
+  document.querySelectorAll('.artist-card.dragging, .artist-card.drag-over')
+    .forEach(el => el.classList.remove('dragging', 'drag-over'));
+}
+function dragOver(e, id) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  document.querySelectorAll('.artist-card.drag-over').forEach(el => el.classList.remove('drag-over'));
+  if (id !== dragSrcId) document.querySelector(`.artist-card[data-id="${id}"]`)?.classList.add('drag-over');
+}
+function dragDrop(e, targetId) {
+  e.preventDefault();
+  dragEnd();
+  if (!dragSrcId || dragSrcId === targetId) return;
+  // Sync customOrder with current artists in case new ones were added
+  const realIds = artists.filter(a => !a._scanning).map(a => a.id);
+  customOrder = customOrder.filter(id => realIds.includes(id));
+  realIds.forEach(id => { if (!customOrder.includes(id)) customOrder.push(id); });
+  const si = customOrder.indexOf(dragSrcId);
+  const ti = customOrder.indexOf(targetId);
+  if (si === -1 || ti === -1) return;
+  customOrder.splice(si, 1);
+  customOrder.splice(ti, 0, dragSrcId);
+  saveCustomOrder();
+  renderList();
+}
+
+function getFiltered() {
+  const filtered = artists.filter(a => {
+    if (a._scanning) return true;
+    if (activeLabel !== 'all' && a.label !== activeLabel) return false;
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return a.name.toLowerCase().includes(q)
+      || (a.label||'').toLowerCase().includes(q)
+      || (a.genres||[]).some(g => g.toLowerCase().includes(q))
+      || (a.type||'').toLowerCase().includes(q)
+      || (a.notes||'').toLowerCase().includes(q)
+      || (a.contacts||[]).some(c =>
+          c.name.toLowerCase().includes(q) ||
+          (c.role||'').toLowerCase().includes(q) ||
+          (c.email||'').toLowerCase().includes(q) ||
+          (c.notes||'').toLowerCase().includes(q)
+        );
+  });
+  return getSorted(filtered);
+}
+
+function getLabels() {
+  const map = {};
+  artists.forEach(a => { if (!a._scanning && a.label) map[a.label] = (map[a.label]||0) + 1; });
+  return Object.entries(map).sort((a,b) => b[1]-a[1]);
+}
+
+// ═══════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════
+function render() {
+  renderSidebar();
+  if (listView === 'labels') renderLabelsView();
+  else { renderList(); renderDetail(); }
+  updateDatalist();
+}
+
+function setListView(view) {
+  listView = view;
+  document.getElementById('view-btn-artists').classList.toggle('active', view === 'artists');
+  document.getElementById('view-btn-labels').classList.toggle('active', view === 'labels');
+  document.getElementById('artist-count').textContent = '';
+  document.querySelector('.app').classList.toggle('view-labels', view === 'labels');
+  if (view === 'labels' && !selectedLabelName) {
+    // Auto-select first label
+    const first = artists.find(a => !a._scanning && a.label);
+    selectedLabelName = first?.label || null;
+  }
+  render();
+}
+
+function buildLabelMap() {
+  const map = {};
+  artists.filter(a => !a._scanning && a.label).forEach(a => {
+    if (!map[a.label]) map[a.label] = { artistObjs: [], contacts: [] };
+    map[a.label].artistObjs.push(a);
+    (a.contacts || []).forEach(c => {
+      const dupe = map[a.label].contacts.some(ec =>
+        ec.name.toLowerCase() === c.name.toLowerCase() &&
+        (ec.role || '').toLowerCase() === (c.role || '').toLowerCase()
+      );
+      if (!dupe) map[a.label].contacts.push({ ...c, _fromArtist: a.name });
+    });
+  });
+  return map;
+}
+
+function renderLabelsView() {
+  const labelMap = buildLabelMap();
+  const labelNames = Object.keys(labelMap).sort((a, b) => a.localeCompare(b));
+
+  // ── Label navigator ──
+  const navEl = document.getElementById('label-nav');
+  if (labelNames.length === 0) {
+    navEl.innerHTML = `<div style="padding:20px 14px;font-size:11px;color:var(--text-dim);font-family:var(--font-mono)">No labels yet</div>`;
+    document.getElementById('label-contacts').innerHTML = '';
+    return;
+  }
+
+  navEl.innerHTML = labelNames.map(label => {
+    const { artistObjs, contacts } = labelMap[label];
+    const st = getLabelStyle(label);
+    const isActive = label === selectedLabelName;
+    return `
+      <div class="label-nav-item ${isActive ? 'active' : ''}" data-action="select-label" data-label="${h(label)}">
+        <span class="label-nav-dot" style="background:${st.dot}"></span>
+        <div class="label-nav-info">
+          <span class="label-nav-name">${h(label)}</span>
+          <span class="label-nav-meta">${artistObjs.length} artist${artistObjs.length!==1?'s':''} · ${contacts.length} contact${contacts.length!==1?'s':''}</span>
+        </div>
+      </div>`;
+  }).join('');
+
+  // ── Contacts panel ──
+  renderLabelContacts(labelMap);
+}
+
+function selectLabel(name) {
+  selectedLabelName = name;
+  renderLabelsView();
+}
+
+function renderLabelContacts(labelMap) {
+  const el = document.getElementById('label-contacts');
+  if (!selectedLabelName || !labelMap[selectedLabelName]) {
+    el.innerHTML = `<div class="lcp-no-selection"><span style="font-size:20px;color:var(--text-dim)">◈</span><span>Select a label</span></div>`;
+    return;
+  }
+
+  const { artistObjs, contacts } = labelMap[selectedLabelName];
+  const st = getLabelStyle(selectedLabelName);
+
+  const contactRows = contacts.length === 0
+    ? `<div class="lcp-empty"><span class="lcp-empty-icon">◈</span><span>No contacts yet — scan artists to find them.</span></div>`
+    : contacts.map(c => {
+        const viaArtists = artistObjs
+          .filter(a => (a.contacts||[]).some(ac => ac.name.toLowerCase() === c.name.toLowerCase()))
+          .map(a => h(a.name)).join(', ');
+        return `
+        <div class="lcp-contact">
+          <div class="lcp-contact-left">
+            <div class="lcp-contact-header">
+              <span class="lcp-contact-name">${h(c.name)}</span>
+              ${c.role ? `<span class="lcp-contact-role">${h(c.role)}</span>` : ''}
+            </div>
+            ${viaArtists ? `<div class="lcp-contact-via">via ${viaArtists}</div>` : ''}
+            <div class="lcp-fields">
+              ${c.email ? `<div class="lcp-field">${iconMail()}<a href="mailto:${h(c.email)}">${h(c.email)}</a><button class="lcp-copy" data-action="copy" data-value="${h(c.email)}">copy</button></div>` : ''}
+              ${c.phone ? `<div class="lcp-field">${iconPhone()}<span>${h(c.phone)}</span><button class="lcp-copy" data-action="copy" data-value="${h(c.phone)}">copy</button></div>` : ''}
+              ${c.social ? `<div class="lcp-field"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/></svg><span>${h(c.social)}</span><button class="lcp-copy" data-action="copy" data-value="${h(c.social)}">copy</button></div>` : ''}
+            </div>
+            ${c.notes ? `<div class="lcp-notes">${h(c.notes)}</div>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+
+  el.innerHTML = `
+    <div class="lcp-header" style="border-left-color:${st.dot}">
+      <div class="lcp-header-top">
+        <span class="lcp-label-name">${h(selectedLabelName)}</span>
+        <span class="lcp-count">${contacts.length} contact${contacts.length!==1?'s':''}</span>
+      </div>
+      <div class="lcp-artists">
+        ${artistObjs.map(a => `<span class="lcp-artist-tag">${h(a.name)}</span>`).join('')}
+      </div>
+    </div>
+    <div class="lcp-list" style="--lcp-accent:${st.dot}">${contactRows}</div>`;
+}
+
+function renderSidebar() {
+  const labels = getLabels();
+  document.getElementById('label-list').innerHTML = `
+    <div class="label-item ${activeLabel==='all'?'active':''}" data-action="filter" data-label="all">
+      <span class="label-dot" style="background:#7070C0"></span>
+      <span class="label-name">All Artists</span>
+      <span class="label-count">${artists.length}</span>
+    </div>
+    ${labels.map(([lbl,cnt]) => {
+      const st = getLabelStyle(lbl);
+      return `
+        <div class="label-item ${activeLabel===lbl?'active':''}" data-action="filter" data-label="${h(lbl)}">
+          <span class="label-dot" style="background:${st.dot}"></span>
+          <span class="label-name">${h(lbl)}</span>
+          <span class="label-count">${cnt}</span>
+        </div>`;
+    }).join('')}
+  `;
+}
+
+function renderList() {
+  const list = getFiltered();
+  document.getElementById('artist-count').textContent =
+    `${list.length} artist${list.length!==1?'s':''}`;
+
+  const cardsEl = document.getElementById('artist-cards');
+  cardsEl.className = sortMode === 'custom' ? 'sort-custom' : '';
+
+  if (!list.length) {
+    cardsEl.innerHTML = `
+      <div class="empty-list">
+        <div class="ei">◈</div>
+        <p>${searchQuery ? 'no results found' : 'no artists yet'}</p>
+      </div>`;
+    return;
+  }
+
+  const isCustom = sortMode === 'custom';
+  cardsEl.innerHTML = list.map(a => {
+    if (a._scanning) return `
+      <div class="artist-card scanning">
+        <div class="artist-avatar" style="opacity:0.35">${initials(a.name)}</div>
+        <div class="artist-info">
+          <div class="artist-name" style="opacity:0.5">${h(a.name)}</div>
+          <div class="artist-meta">
+            <span class="scanning-label">
+              <div class="scan-spinner" style="width:10px;height:10px;border-width:1.5px;flex-shrink:0"></div>
+              scanning
+            </span>
+            <span class="dot-wave"><span>.</span><span>.</span><span>.</span></span>
+          </div>
+        </div>
+      </div>`;
+    const st = getLabelStyle(a.label);
+    const n = (a.contacts||[]).length;
+    const dragAttrs = isCustom
+      ? `draggable="true" ondragstart="dragStart(event,'${h(a.id)}')" ondragend="dragEnd()" ondragover="dragOver(event,'${h(a.id)}')" ondrop="dragDrop(event,'${h(a.id)}')" data-id="${h(a.id)}"`
+      : `data-id="${h(a.id)}"`;
+    return `
+      <button class="artist-card ${selectedId===a.id?'active':''}" data-action="select" ${dragAttrs} style="border-left: 3px solid ${a.label ? st.dot : 'var(--border)'}">
+        ${isCustom ? `<span class="drag-handle" onclick="event.stopPropagation()">⠿</span>` : ''}
+        <div class="artist-avatar">${initials(a.name)}</div>
+        <div class="artist-info">
+          <div class="artist-name">${h(a.name)}</div>
+          <div class="artist-meta">
+            <span class="label-badge ${st.cls}">${h(a.label)}</span>
+            <span class="contact-chip">${n} contact${n!==1?'s':''}</span>
+          </div>
+        </div>
+        <div class="artist-type-tag">${h(a.type||'group')}</div>
+      </button>`;
+  }).join('');
+}
+
+function renderDetail() {
+  const empty = document.getElementById('detail-empty');
+  const content = document.getElementById('detail-content');
+
+  if (!selectedId) {
+    empty.style.display = 'flex'; content.style.display = 'none'; return;
+  }
+  const a = artists.find(x => x.id === selectedId);
+  if (!a) {
+    empty.style.display = 'flex'; content.style.display = 'none'; return;
+  }
+
+  empty.style.display = 'none'; content.style.display = 'block';
+  const st = getLabelStyle(a.label);
+  const contacts = a.contacts || [];
+
+  content.innerHTML = `
+    <div class="detail-header">
+      <div class="detail-header-top">
+        <div class="detail-name">${h(a.name)}</div>
+        <div class="detail-avatar-lg">${initials(a.name)}</div>
+      </div>
+      <div class="detail-badges">
+        <span class="label-badge ${st.cls}">${h(a.label)}</span>
+        <span class="label-badge" style="background:var(--card);color:var(--text-muted);border:1px solid var(--border)">${h(a.type||'group')}</span>
+        ${(a.genres||[]).map(g=>`<span class="genre-tag">${h(g)}</span>`).join('')}
+      </div>
+      <div class="detail-actions">
+        <button class="icon-btn" data-action="scan-web" data-id="${h(a.id)}" title="Open web searches for A&R contacts">
+          ${iconScan()} Scan Web
+        </button>
+        <button class="icon-btn" data-action="edit-artist" data-id="${h(a.id)}">
+          ${iconEdit()} Edit
+        </button>
+        <button class="icon-btn danger" data-action="delete-artist" data-id="${h(a.id)}">
+          ${iconTrash()} Delete
+        </button>
+      </div>
+    </div>
+    <div class="detail-body">
+      ${a.notes ? `
+        <div class="notes-accordion ${collapsedNotes.has(a.id) ? 'notes-collapsed' : ''}">
+          <div class="section-label toggleable" onclick="toggleNotes('${h(a.id)}')">
+            Notes
+            <svg class="notes-chevron ${collapsedNotes.has(a.id) ? 'collapsed' : ''}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          ${collapsedNotes.has(a.id) ? '' : `<div class="artist-notes-box">${h(a.notes)}</div>`}
+        </div>
+      ` : ''}
+
+      <div class="section-label" style="margin-top:${a.notes?'16':'4'}px">
+        A&amp;R Contacts — ${contacts.length}
+      </div>
+
+      ${contacts.length===0 ? `
+        <p style="font-size:12px;color:var(--text-dim);font-family:var(--font-mono);padding:8px 0">No contacts added yet.</p>
+      ` : contacts.map(c => `
+        <div class="contact-card">
+          <div class="contact-card-header">
+            <div class="contact-name-role">
+              <div class="contact-name">${h(c.name)}</div>
+              ${c.role ? `<div class="contact-role">${h(c.role)}</div>` : ''}
+            </div>
+            <div class="contact-actions-inline">
+              <button class="icon-btn sm" data-action="edit-contact" data-artist-id="${h(a.id)}" data-contact-id="${h(c.id)}">${iconEdit()}</button>
+              <button class="icon-btn sm danger" data-action="delete-contact" data-artist-id="${h(a.id)}" data-contact-id="${h(c.id)}">${iconTrash()}</button>
+            </div>
+          </div>
+          <div class="contact-fields">
+            ${c.email ? `
+              <div class="contact-field">
+                ${iconMail()}
+                <a href="mailto:${h(c.email)}">${h(c.email)}</a>
+                <button class="copy-btn-inline" data-action="copy" data-value="${h(c.email)}">copy</button>
+              </div>` : ''}
+            ${c.phone ? `
+              <div class="contact-field">
+                ${iconPhone()}
+                <span>${h(c.phone)}</span>
+                <button class="copy-btn-inline" data-action="copy" data-value="${h(c.phone)}">copy</button>
+              </div>` : ''}
+            ${c.social ? `
+              <div class="contact-field">
+                ${iconAt()}
+                <span>${h(c.social)}</span>
+              </div>` : ''}
+          </div>
+          ${c.notes ? `<div class="contact-notes">${h(c.notes)}</div>` : ''}
+        </div>
+      `).join('')}
+
+      <button class="add-contact-btn" data-action="add-contact" data-id="${h(a.id)}">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        Add Contact
+      </button>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════════
+function toggleNotes(artistId) {
+  if (collapsedNotes.has(artistId)) collapsedNotes.delete(artistId);
+  else collapsedNotes.add(artistId);
+  renderDetail();
+}
+
+function selectArtist(id) {
+  selectedId = id;
+  render();
+  if (window.innerWidth < 960) {
+    document.getElementById('detail-panel').classList.add('mobile-open');
+  }
+}
+
+function setLabel(lbl) { activeLabel = lbl; render(); }
+
+// ─── ARTIST CRUD ───
+function openArtistModal(id) {
+  document.getElementById('artist-modal-title').textContent = id ? 'Edit Artist' : 'Add Artist';
+  const tabs = document.getElementById('artist-modal-tabs');
+
+  if (id) {
+    // Editing: go straight to manual, hide tab bar
+    tabs.style.display = 'none';
+    switchArtistTab('manual');
+    const a = artists.find(x => x.id === id);
+    document.getElementById('artist-id').value = id;
+    document.getElementById('artist-name').value = a.name;
+    document.getElementById('artist-type').value = a.type || 'group';
+    document.getElementById('artist-label').value = a.label;
+    document.getElementById('artist-country').value = a.country || '';
+    document.getElementById('artist-genres').value = (a.genres||[]).join(', ');
+    document.getElementById('artist-notes').value = a.notes || '';
+    openModal('artist-modal');
+    setTimeout(() => document.getElementById('artist-name').focus(), 120);
+  } else {
+    // Adding: show auto-fill tab by default
+    tabs.style.display = '';
+    switchArtistTab('auto');
+    document.getElementById('autofill-name').value = '';
+    document.getElementById('autofill-status').innerHTML = '';
+    document.getElementById('bulk-names').value = '';
+    document.getElementById('bulk-status').textContent = '';
+    const btn = document.getElementById('autofill-btn');
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Find &amp; Add Artist`;
+    // Clear manual fields too
+    document.getElementById('artist-id').value = '';
+    document.getElementById('artist-name').value = '';
+    document.getElementById('artist-type').value = 'group';
+    document.getElementById('artist-label').value = '';
+    document.getElementById('artist-country').value = 'South Korea';
+    document.getElementById('artist-genres').value = 'K-Pop';
+    document.getElementById('artist-notes').value = '';
+    openModal('artist-modal');
+    setTimeout(() => document.getElementById('autofill-name').focus(), 120);
+  }
+}
+
+function saveArtist() {
+  const name = document.getElementById('artist-name').value.trim();
+  const label = document.getElementById('artist-label').value.trim();
+  if (!name || !label) { toast('Name and label are required', true); return; }
+
+  const id = document.getElementById('artist-id').value;
+  const data = {
+    name, label,
+    type: document.getElementById('artist-type').value,
+    country: document.getElementById('artist-country').value.trim(),
+    genres: document.getElementById('artist-genres').value.split(',').map(g=>g.trim()).filter(Boolean),
+    notes: document.getElementById('artist-notes').value.trim(),
+  };
+
+  let saved;
+  if (id) {
+    const i = artists.findIndex(a => a.id === id);
+    artists[i] = { ...artists[i], ...data };
+    saved = artists[i];
+  } else {
+    saved = { id: uid(), contacts: [], ...data };
+    artists.push(saved);
+  }
+
+  closeModal('artist-modal');
+  render();
+  toast(id ? 'Artist updated' : 'Artist added');
+  syncArtist(saved);
+}
+
+function deleteArtist(id) {
+  artists = artists.filter(a => a.id !== id);
+  if (selectedId === id) selectedId = null;
+  render();
+  toast('Artist deleted');
+  syncDeleteArtist(id);
+}
+
+// ─── CONTACT CRUD ───
+function openContactModal(artistId, contactId) {
+  document.getElementById('contact-modal-title').textContent = contactId ? 'Edit Contact' : 'Add Contact';
+  document.getElementById('contact-artist-id').value = artistId;
+
+  if (contactId) {
+    const a = artists.find(x => x.id === artistId);
+    const c = (a.contacts||[]).find(x => x.id === contactId);
+    document.getElementById('contact-id').value = contactId;
+    document.getElementById('contact-name').value = c.name;
+    document.getElementById('contact-role').value = c.role || '';
+    document.getElementById('contact-email').value = c.email || '';
+    document.getElementById('contact-phone').value = c.phone || '';
+    document.getElementById('contact-social').value = c.social || '';
+    document.getElementById('contact-notes').value = c.notes || '';
+  } else {
+    ['contact-id','contact-name','contact-role','contact-email','contact-phone','contact-social','contact-notes']
+      .forEach(id => document.getElementById(id).value = '');
+  }
+
+  openModal('contact-modal');
+  setTimeout(() => document.getElementById('contact-name').focus(), 120);
+}
+
+function saveContact() {
+  const name = document.getElementById('contact-name').value.trim();
+  if (!name) { toast('Contact name is required', true); return; }
+
+  const artistId = document.getElementById('contact-artist-id').value;
+  const contactId = document.getElementById('contact-id').value;
+  const a = artists.find(x => x.id === artistId);
+  if (!a.contacts) a.contacts = [];
+
+  const data = {
+    name,
+    role: document.getElementById('contact-role').value.trim(),
+    email: document.getElementById('contact-email').value.trim(),
+    phone: document.getElementById('contact-phone').value.trim(),
+    social: document.getElementById('contact-social').value.trim(),
+    notes: document.getElementById('contact-notes').value.trim(),
+  };
+
+  if (contactId) {
+    const i = a.contacts.findIndex(c => c.id === contactId);
+    a.contacts[i] = { ...a.contacts[i], ...data };
+  } else {
+    a.contacts.push({ id: uid(), ...data });
+  }
+
+  closeModal('contact-modal');
+  render();
+  toast(contactId ? 'Contact updated' : 'Contact added');
+  syncArtist(a);
+}
+
+function deleteContact(artistId, contactId) {
+  const a = artists.find(x => x.id === artistId);
+  a.contacts = (a.contacts||[]).filter(c => c.id !== contactId);
+  render();
+  toast('Contact deleted');
+  syncArtist(a);
+}
+
+// ─── CONFIRM ───
+function confirmDelete(type, ...args) {
+  const msgs = {
+    artist: 'Delete this artist and all their contacts? This cannot be undone.',
+    contact: 'Delete this contact? This cannot be undone.',
+  };
+  const titles = { artist: 'Delete Artist', contact: 'Delete Contact' };
+  document.getElementById('confirm-title').textContent = titles[type];
+  document.getElementById('confirm-msg').textContent = msgs[type];
+  document.getElementById('confirm-overlay').classList.add('open');
+  confirmCallback = () => {
+    if (type === 'artist') deleteArtist(args[0]);
+    if (type === 'contact') deleteContact(args[0], args[1]);
+  };
+}
+
+function closeConfirm(ok) {
+  document.getElementById('confirm-overlay').classList.remove('open');
+  if (ok && confirmCallback) confirmCallback();
+  confirmCallback = null;
+}
+
+// ─── PROMPT (replaces window.prompt, blocked in Electron with contextIsolation) ───
+let promptResolve = null;
+function showPrompt(title, defaultValue = '') {
+  return new Promise(resolve => {
+    promptResolve = resolve;
+    document.getElementById('prompt-title').textContent = title;
+    const input = document.getElementById('prompt-input');
+    input.value = defaultValue;
+    document.getElementById('prompt-overlay').classList.add('open');
+    setTimeout(() => { input.focus(); input.select(); }, 60);
+  });
+}
+function closePrompt(ok) {
+  document.getElementById('prompt-overlay').classList.remove('open');
+  const val = document.getElementById('prompt-input').value.trim();
+  if (promptResolve) promptResolve(ok ? val : null);
+  promptResolve = null;
+}
+
+// ═══════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════
+function uid() { return crypto.randomUUID(); }
+
+function initials(name) {
+  const parts = name.replace(/[()[\]]/g,'').split(/[\s/\-]+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0,3).toUpperCase();
+  return parts.map(p=>p[0]).join('').toUpperCase().slice(0,3);
+}
+
+function h(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => toast('Copied: ' + text));
+}
+
+function toast(msg, isErr) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.color = isErr ? '#FF5555' : 'var(--green)';
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function handleOverlayClick(e, id) {
+  if (e.target === e.currentTarget) closeModal(id);
+}
+
+function updateDatalist() {
+  const labels = [...new Set(artists.map(a=>a.label))];
+  document.getElementById('label-datalist').innerHTML = labels.map(l=>`<option value="${h(l)}">`).join('');
+}
+
+// ─── ARTIST MODAL TABS ───
+function switchArtistTab(tab) {
+  ['auto','bulk','manual'].forEach(t => {
+    const pane   = document.getElementById(`artist-tab-${t}`);
+    const footer = document.getElementById(`artist-footer-${t}`);
+    const btn    = document.getElementById(`tab-btn-${t}`);
+    if (pane)   pane.style.display   = t === tab ? '' : 'none';
+    if (footer) footer.style.display = t === tab ? '' : 'none';
+    if (btn)    btn.classList.toggle('active', t === tab);
+  });
+}
+
+function enqueueScan(placeholderId, name) {
+  scanQueue.push({ placeholderId, name });
+  updateQueueBadge();
+  if (!scanQueueRunning) processScanQueue();
+}
+
+function isRateLimit(err) {
+  return String(err.message || err).toLowerCase().includes('rate limit');
+}
+
+async function processScanQueue() {
+  if (scanQueueRunning || scanQueue.length === 0) return;
+  scanQueueRunning = true;
+  while (scanQueue.length > 0) {
+    const item = scanQueue[0];
+    const { placeholderId, name } = item;
+    updateQueueBadge();
+    try {
+      const artist = await window.kc.scanArtist(name);
+      scanQueue.shift();
+      const contacts = (artist.contacts || []).map(c => ({ id: uid(), ...c }));
+      const idx = artists.findIndex(a => a.id === placeholderId);
+      const newArtist = { ...artist, id: placeholderId, contacts };
+      if (idx >= 0) artists[idx] = newArtist;
+      selectedId = placeholderId;
+      render();
+      toast(`Added ${artist.name} — ${contacts.length} contact${contacts.length !== 1 ? 's' : ''} found`);
+      syncArtist(newArtist);
+      // 20s gap: ~3 requests/min keeps well under the 30k token/min limit
+      if (scanQueue.length > 0) await new Promise(r => setTimeout(r, 20000));
+    } catch (err) {
+      if (isRateLimit(err)) {
+        // Wait 60s then retry the same item (don't shift it off the queue)
+        toast(`Rate limit hit — retrying "${name}" in 60s…`, true);
+        updateQueueBadge();
+        await new Promise(r => setTimeout(r, 60000));
+      } else {
+        scanQueue.shift();
+        artists = artists.filter(a => a.id !== placeholderId);
+        render();
+        toast(`Scan failed for "${name}": ${String(err.message || err)}`, true);
+      }
+    }
+  }
+  scanQueueRunning = false;
+  updateQueueBadge();
+}
+
+function updateQueueBadge() {
+  const total = scanQueue.length;
+  const badge = document.getElementById('scan-queue-badge');
+  const text  = document.getElementById('scan-queue-badge-text');
+  if (!badge) return;
+  if (total > 0) {
+    if (text) text.textContent = `${total} scanning…`;
+    badge.style.display = 'inline-flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function artistExists(name) {
+  const needle = name.toLowerCase();
+  return artists.some(a => a.name.toLowerCase() === needle);
+}
+
+function autoFillArtist() {
+  const name = document.getElementById('autofill-name').value.trim();
+  if (!name) {
+    document.getElementById('autofill-status').innerHTML = '<span style="font-size:12px;font-family:var(--font-mono);color:#FF5555">Enter an artist name first.</span>';
+    return;
+  }
+  if (!window.kc) {
+    document.getElementById('autofill-status').innerHTML = '<span style="font-size:12px;font-family:var(--font-mono);color:var(--text-muted)">Auto-fill requires the desktop app.</span>';
+    return;
+  }
+  if (artistExists(name)) {
+    document.getElementById('autofill-status').innerHTML = `<span style="font-size:12px;font-family:var(--font-mono);color:#FF5555">${h(name)} is already in this list.</span>`;
+    return;
+  }
+  closeModal('artist-modal');
+  const placeholderId = uid();
+  artists.push({ id: placeholderId, _scanning: true, name, label: '', type: 'group', genres: [], contacts: [], notes: '' });
+  render();
+  enqueueScan(placeholderId, name);
+}
+
+function bulkImportArtists() {
+  if (!window.kc) {
+    document.getElementById('bulk-status').textContent = 'Requires the desktop app.';
+    return;
+  }
+  const raw = document.getElementById('bulk-names').value;
+  const allNames = raw.split('\n').map(n => n.trim()).filter(Boolean);
+  if (allNames.length === 0) {
+    document.getElementById('bulk-status').textContent = 'Enter at least one name.';
+    return;
+  }
+  const dupes = allNames.filter(n => artistExists(n));
+  const names  = allNames.filter(n => !artistExists(n));
+  if (names.length === 0) {
+    document.getElementById('bulk-status').textContent = `All ${dupes.length} already in this list.`;
+    return;
+  }
+  closeModal('artist-modal');
+  names.forEach(name => {
+    const placeholderId = uid();
+    artists.push({ id: placeholderId, _scanning: true, name, label: '', type: 'group', genres: [], contacts: [], notes: '' });
+    enqueueScan(placeholderId, name);
+  });
+  render();
+  const skipMsg = dupes.length ? ` (${dupes.length} duplicate${dupes.length !== 1 ? 's' : ''} skipped)` : '';
+  toast(`Queued ${names.length} artist${names.length !== 1 ? 's' : ''} for scanning${skipMsg}`);
+}
+
+// ─── AUTO SCAN ───
+async function autoScanContacts(artistId) {
+  const a = artists.find(x => x.id === artistId);
+  if (!a) return;
+
+  const content = document.getElementById('detail-content');
+  const bar = document.createElement('div');
+  bar.className = 'scan-loading-bar';
+  bar.innerHTML = `<div class="scan-spinner"></div><span>Scanning for A&amp;R contacts for ${h(a.name)}…</span>`;
+  content.insertAdjacentElement('afterbegin', bar);
+
+  try {
+    const result = await window.kc.scanArtist(a.name);
+    bar.remove();
+    const found = (result.contacts || []);
+    const existing = a.contacts || [];
+    let added = 0;
+    for (const nc of found) {
+      const dupe = existing.some(e =>
+        e.name.toLowerCase() === nc.name.toLowerCase() &&
+        (e.role || '').toLowerCase() === (nc.role || '').toLowerCase()
+      );
+      if (!dupe) { existing.push({ id: uid(), ...nc }); added++; }
+    }
+    a.contacts = existing;
+    render();
+    toast(`Scan done — ${added} new contact${added !== 1 ? 's' : ''} added`);
+    syncArtist(a);
+  } catch (err) {
+    bar.remove();
+    toast('Scan failed: ' + String(err.message || err), true);
+  }
+}
+
+// ─── SCAN WEB ───
+function scanWeb(artistId) {
+  if (window.kc) {
+    autoScanContacts(artistId);
+  } else {
+    const a = artists.find(x => x.id === artistId);
+    if (!a) return;
+    const queries = [
+      `"${a.name}" A&R contact music submission songwriter`,
+      `"${a.label}" A&R email submission songwriter producer`,
+      `site:linkedin.com "${a.label}" "A&R"`,
+    ];
+    queries.forEach(q => window.open(`https://www.google.com/search?q=${encodeURIComponent(q)}`, '_blank'));
+    toast('Opened 3 searches in new tabs');
+  }
+}
+
+function scanWebFromForm() {
+  const name = document.getElementById('artist-name').value.trim();
+  const label = document.getElementById('artist-label').value.trim();
+  if (!name && !label) { toast('Enter an artist name or label first', true); return; }
+
+  if (window.kc) {
+    if (!name || !label) { toast('Enter both a name and label before scanning', true); return; }
+    const existingId = document.getElementById('artist-id').value;
+    if (existingId) {
+      saveArtist();
+      selectArtist(existingId);
+      autoScanContacts(existingId);
+    } else {
+      const prevCount = artists.length;
+      saveArtist();
+      if (artists.length > prevCount) {
+        const newArtist = artists[artists.length - 1];
+        selectArtist(newArtist.id);
+        autoScanContacts(newArtist.id);
+      }
+    }
+  } else {
+    const queries = [
+      name  ? `"${name}" A&R contact music submission songwriter` : null,
+      label ? `"${label}" A&R email submission songwriter 2025` : null,
+      label ? `site:linkedin.com "${label}" "A&R"` : null,
+    ].filter(Boolean);
+    queries.forEach(q => window.open(`https://www.google.com/search?q=${encodeURIComponent(q)}`, '_blank'));
+    toast(`Opened ${queries.length} searches in new tabs`);
+  }
+}
+
+// ─── ICONS ───
+function iconEdit() { return `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`; }
+function iconTrash() { return `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`; }
+function iconMail() { return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>`; }
+function iconPhone() { return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.18H6.6a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.64 9.6a16 16 0 0 0 6.78 6.78l1.69-1.7a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7a2 2 0 0 1 1.72 2.02z"/></svg>`; }
+function iconAt() { return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"/></svg>`; }
+function iconScan() { return `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>`; }
+
+// ═══════════════════════════════════════════
+// EVENTS — delegated click handler for all dynamic UI
+// ═══════════════════════════════════════════
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-action]');
+  if (!el) return;
+  const {action} = el.dataset;
+  if (action === 'select')              selectArtist(el.dataset.id);
+  else if (action === 'filter')         setLabel(el.dataset.label);
+  else if (action === 'scan-web')       scanWeb(el.dataset.id);
+  else if (action === 'edit-artist')    openArtistModal(el.dataset.id);
+  else if (action === 'delete-artist')  confirmDelete('artist', el.dataset.id);
+  else if (action === 'edit-contact')   openContactModal(el.dataset.artistId, el.dataset.contactId);
+  else if (action === 'delete-contact') confirmDelete('contact', el.dataset.artistId, el.dataset.contactId);
+  else if (action === 'add-contact')    openContactModal(el.dataset.id);
+  else if (action === 'copy')           copyText(el.dataset.value);
+  else if (action === 'select-label')   selectLabel(el.dataset.label);
+});
+
+document.getElementById('search').addEventListener('input', e => {
+  searchQuery = e.target.value;
+  render();
+});
+
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === ',') {
+    e.preventDefault();
+    if (document.getElementById('settings-overlay').classList.contains('open')) closeSettings();
+    else openSettings();
+    return;
+  }
+  if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+    e.preventDefault();
+    document.getElementById('search').focus();
+    document.getElementById('search').select();
+  }
+  if (e.key === 'Escape') {
+    if (document.getElementById('settings-overlay').classList.contains('open')) {
+      closeSettings(); return;
+    }
+    document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+    document.getElementById('confirm-overlay').classList.remove('open');
+    if (window.innerWidth < 960) {
+      document.getElementById('detail-panel').classList.remove('mobile-open');
+    }
+  }
+  if (e.key === 'Enter') {
+    const openModal = document.querySelector('.modal-overlay.open');
+    if (openModal) {
+      if (openModal.id === 'artist-modal') {
+        if (document.getElementById('artist-tab-auto').style.display !== 'none') autoFillArtist();
+        else saveArtist();
+      }
+      if (openModal.id === 'contact-modal') saveContact();
+    }
+  }
+});
+
+// ═══════════════════════════════════════════
+// MULTI-USER STATE
+// ═══════════════════════════════════════════
+let currentUser = null;      // { id, email }
+let currentListId = null;
+let currentListRole = null;  // 'owner' | 'editor' | 'viewer'
+let currentListName = '';
+let lists = [];
+
+// ─── SETUP (Supabase credentials) ───
+async function saveSetup() {
+  const url  = document.getElementById('setup-url').value.trim();
+  const key  = document.getElementById('setup-anon-key').value.trim();
+  const errEl = document.getElementById('setup-error');
+  if (!url || !key) { errEl.textContent = 'Both fields are required.'; return; }
+  try {
+    const cfg = await window.kc.getConfig();
+    await window.kc.setConfig({ ...cfg, supabaseUrl: url, supabaseAnonKey: key });
+    document.getElementById('setup-overlay').classList.add('hidden');
+    document.getElementById('auth-overlay').classList.remove('hidden');
+  } catch (err) {
+    errEl.textContent = err.message;
+  }
+}
+
+// ─── AUTH ───
+let authMode = 'signin'; // 'signin' | 'signup'
+
+function toggleAuthMode() {
+  authMode = authMode === 'signin' ? 'signup' : 'signin';
+  document.getElementById('auth-subtitle').textContent    = authMode === 'signin' ? 'Sign in to your account' : 'Create an account';
+  document.getElementById('auth-submit-btn').textContent  = authMode === 'signin' ? 'Sign In' : 'Sign Up';
+  document.getElementById('auth-switch-label').textContent = authMode === 'signin' ? "Don't have an account?" : 'Already have an account?';
+  document.getElementById('auth-error').textContent = '';
+}
+
+function authKeydown(e) { if (e.key === 'Enter') authSubmit(); }
+
+async function authSubmit() {
+  const email    = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const errEl    = document.getElementById('auth-error');
+  if (!email || !password) { errEl.textContent = 'Email and password are required.'; return; }
+  const btn = document.getElementById('auth-submit-btn');
+  btn.disabled = true; btn.textContent = 'Please wait…';
+  errEl.textContent = '';
+  try {
+    if (authMode === 'signup') {
+      await window.kc.signUp(email, password);
+      errEl.style.color = 'var(--green)';
+      errEl.textContent = 'Account created! Check your email to confirm, then sign in.';
+      authMode = 'signin';
+    } else {
+      const { user } = await window.kc.signIn(email, password);
+      await onSignedIn(user);
+    }
+  } catch (err) {
+    errEl.style.color = '#FF5555';
+    const code = err.code || '';
+    const msg  = String(err.message || err).toLowerCase();
+    if (code === 'invalid_credentials' || code === 'user_not_found') {
+      errEl.textContent = 'No account found with that email, or the password is incorrect.';
+    } else if (code === 'email_not_confirmed') {
+      errEl.textContent = 'Please confirm your email first — check your inbox for the confirmation link.';
+    } else if (code === 'user_already_exists' || msg.includes('already registered') || msg.includes('already been registered')) {
+      errEl.textContent = 'An account with this email already exists. Try signing in instead.';
+    } else if (code === 'weak_password' || msg.includes('password should be at least')) {
+      errEl.textContent = 'Password must be at least 6 characters.';
+    } else if (msg.includes('unable to validate email') || msg.includes('invalid email')) {
+      errEl.textContent = 'Please enter a valid email address.';
+    } else {
+      errEl.textContent = err.message;
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = authMode === 'signin' ? 'Sign In' : 'Sign Up';
+  }
+}
+
+async function doSignOut() {
+  if (window.kc?.unsubscribeFromList) window.kc.unsubscribeFromList();
+  try { await window.kc.signOut(); } catch {}
+  currentUser = null; currentListId = null; currentListRole = null; lists = [];
+  artists = [];
+  document.getElementById('user-chip').style.display = 'none';
+  document.getElementById('header-settings-btn').style.display = 'none';
+  document.getElementById('share-list-btn').style.display = 'none';
+  document.getElementById('back-to-lists-btn').style.display = 'none';
+  document.getElementById('list-title-section').style.display = 'none';
+  document.getElementById('settings-overlay').classList.remove('open');
+  document.getElementById('dashboard-overlay').classList.add('hidden');
+  document.getElementById('auth-overlay').classList.remove('hidden');
+  document.body.classList.remove('role-viewer');
+  render();
+}
+
+// ─── LISTS ───
+function handleRealtimeChange(payload) {
+  if (!currentListId) return;
+  const { eventType } = payload;
+  if (eventType === 'DELETE') {
+    const id = payload.old?.id;
+    if (!id) return;
+    artists = artists.filter(a => a.id !== id);
+    if (selectedId === id) selectedId = null;
+  } else {
+    const row = payload.new;
+    if (!row) return;
+    const artist = { ...row.data, id: row.id };
+    const idx = artists.findIndex(a => a.id === row.id);
+    if (idx >= 0) artists[idx] = artist;
+    else artists.push(artist);
+  }
+  render();
+}
+
+async function onSignedIn(user) {
+  currentUser = user;
+  document.getElementById('auth-overlay').classList.add('hidden');
+
+  // User chip in main app header
+  const chip  = document.getElementById('user-chip');
+  const av    = document.getElementById('user-avatar');
+  const label = document.getElementById('user-email-label');
+  av.textContent     = user.email[0].toUpperCase();
+  label.textContent  = user.email;
+  chip.style.display = 'flex';
+  document.getElementById('header-settings-btn').style.display = 'inline-flex';
+
+  // Dashboard email
+  document.getElementById('dashboard-email').textContent = user.email;
+
+  // Register realtime listener once (survives list switches)
+  if (window.kc.onArtistChange) window.kc.onArtistChange(handleRealtimeChange);
+
+  // Register deep link listener once
+  if (window.kc.onDeepLink) window.kc.onDeepLink(handleShareToken);
+
+  await loadLists();
+}
+
+async function loadLists() {
+  lists = await window.kc.getLists();
+  if (lists.length === 0) {
+    const list = await window.kc.createList('My List');
+    lists = [list];
+  }
+  showDashboard();
+}
+
+// ─── LIST TITLE ───
+function setListTitleDisplay(name, role) {
+  const section = document.getElementById('list-title-section');
+  const display = document.getElementById('list-title-display');
+  display.textContent = name;
+  section.style.display = '';
+  // Only owners can rename
+  display.style.cursor = role === 'owner' ? 'text' : 'default';
+  display.onclick = role === 'owner' ? startEditListName : null;
+  document.querySelector('.list-title-edit-icon').style.display = role === 'owner' ? '' : 'none';
+}
+
+function startEditListName() {
+  if (currentListRole !== 'owner') return;
+  const display = document.getElementById('list-title-display');
+  const input   = document.getElementById('list-title-input');
+  display.style.display = 'none';
+  input.style.display   = 'block';
+  input.value = currentListName;
+  input.focus();
+  input.select();
+}
+
+function listTitleKeydown(e) {
+  if (e.key === 'Enter')  { e.preventDefault(); document.getElementById('list-title-input').blur(); }
+  if (e.key === 'Escape') { cancelEditListName(); }
+}
+
+function cancelEditListName() {
+  document.getElementById('list-title-display').style.display = '';
+  const input = document.getElementById('list-title-input');
+  input.style.display = 'none';
+  input.value = currentListName;
+}
+
+async function saveListName() {
+  const input = document.getElementById('list-title-input');
+  const name  = input.value.trim();
+  input.style.display = 'none';
+  document.getElementById('list-title-display').style.display = '';
+  if (!name || name === currentListName) return;
+  try {
+    await window.kc.renameList(currentListId, name);
+    currentListName = name;
+    const list = lists.find(l => l.id === currentListId);
+    if (list) list.name = name;
+    document.getElementById('list-title-display').textContent = name;
+    toast('List renamed');
+  } catch (err) {
+    document.getElementById('list-title-display').textContent = currentListName;
+    toast('Rename failed: ' + err.message, true);
+  }
+}
+
+// ─── DASHBOARD ───
+function showDashboard() {
+  if (window.kc?.unsubscribeFromList) window.kc.unsubscribeFromList();
+  document.getElementById('dashboard-overlay').classList.remove('hidden');
+  document.getElementById('back-to-lists-btn').style.display = 'none';
+  document.getElementById('share-list-btn').style.display = 'none';
+  document.getElementById('list-title-section').style.display = 'none';
+  selectedId = null;
+  currentListId = null;
+  currentListRole = null;
+  currentListName = '';
+  document.body.classList.remove('role-viewer');
+  renderDashboard();
+}
+
+function renderDashboard() {
+  const owned  = lists.filter(l => l.role === 'owner');
+  const shared = lists.filter(l => l.role !== 'owner');
+
+  const cardHTML = (l) => `
+    <div class="list-card" onclick="openList('${h(l.id)}','${h(l.role)}')">
+      <div class="list-card-name">${h(l.name)}</div>
+      <div class="list-card-footer">
+        <span class="list-role-badge ${l.role}">${l.role}</span>
+        ${l.role === 'owner' ? `
+          <button class="icon-btn sm" style="margin-left:auto" onclick="event.stopPropagation();openShareModal('${h(l.id)}')">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            Share
+          </button>` : ''}
+      </div>
+    </div>`;
+
+  let html = '';
+
+  if (lists.length === 0) {
+    html = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:80px 20px;text-align:center">
+        <div style="font-family:var(--font-mono);font-size:32px;opacity:0.15">◈</div>
+        <div style="font-size:17px;font-weight:700;letter-spacing:-0.02em">No lists yet</div>
+        <div style="font-size:13px;color:var(--text-muted);font-family:var(--font-mono)">Create your first list to start tracking contacts</div>
+        <button class="btn btn-primary" style="margin-top:8px" onclick="createNewList()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+          Create First List
+        </button>
+      </div>`;
+  } else {
+    html += `<div class="dash-section-label">Your Lists</div>`;
+    html += `<div class="list-grid">`;
+    owned.forEach(l => { html += cardHTML(l); });
+    html += `
+      <div class="list-card new-card" onclick="createNewList()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        New List
+      </div>
+    </div>`;
+
+    if (shared.length > 0) {
+      html += `<div class="dash-section-label">Shared With You</div>`;
+      html += `<div class="list-grid">`;
+      shared.forEach(l => { html += cardHTML(l); });
+      html += `</div>`;
+    }
+  }
+
+  document.getElementById('dashboard-body').innerHTML = html;
+  document.getElementById('dashboard-sub').textContent =
+    `${lists.length} list${lists.length !== 1 ? 's' : ''}`;
+}
+
+async function openList(listId, role) {
+  document.getElementById('dashboard-overlay').classList.add('hidden');
+  document.getElementById('back-to-lists-btn').style.display = '';
+  document.getElementById('share-list-btn').style.display = role === 'owner' ? '' : 'none';
+  currentListId   = listId;
+  currentListRole = role;
+  currentListName = lists.find(l => l.id === listId)?.name || '';
+  selectedId = null;
+  activeLabel = 'all';
+  searchQuery = '';
+  listView = 'artists';
+  sortMode = loadSortMode();
+  customOrder = loadCustomOrder();
+  document.querySelector('.app').classList.remove('view-labels');
+  document.getElementById('view-btn-artists')?.classList.add('active');
+  document.getElementById('view-btn-labels')?.classList.remove('active');
+  document.getElementById('search').value = '';
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.toggle('active', b.dataset.sort === sortMode));
+  document.body.classList.toggle('role-viewer', role === 'viewer');
+
+  setListTitleDisplay(currentListName, role);
+
+  if (window.kc?.subscribeToList) window.kc.subscribeToList(listId);
+
+  await loadListArtists(listId);
+}
+
+function renderListsSidebar() { /* navigation is now dashboard-based */ }
+
+async function createNewList() {
+  const name = await showPrompt('New list name');
+  if (!name) return;
+  try {
+    const list = await window.kc.createList(name.trim());
+    lists.push(list);
+    renderDashboard();
+    toast('List created — opening it now');
+    await openList(list.id, 'owner');
+  } catch (err) { toast('Error: ' + err.message, true); }
+}
+
+// ─── USER MENU ───
+function toggleUserMenu() {
+  const chip = document.getElementById('user-chip');
+  chip.classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  const chip = document.getElementById('user-chip');
+  if (chip && !chip.contains(e.target)) chip.classList.remove('open');
+}, true);
+
+// ─── SHARE MODAL ───
+let sharingListId = null;
+
+async function openShareModal(listId) {
+  document.getElementById('user-chip').classList.remove('open');
+  sharingListId = listId || currentListId;
+  if (!sharingListId) return;
+  const list = lists.find(l => l.id === sharingListId);
+  document.getElementById('share-modal-title').textContent = `Share "${list?.name || 'List'}"`;
+  document.getElementById('share-email-input').value = '';
+  document.getElementById('share-error').textContent = '';
+  document.getElementById('token-error').textContent = '';
+  await renderShareRows();
+  await renderShareTokens();
+  openModal('share-modal');
+}
+
+async function renderShareRows() {
+  const shares = await window.kc.getShares(sharingListId);
+  document.getElementById('share-list-rows').innerHTML = shares.length === 0
+    ? '<p style="font-size:11px;color:var(--text-dim);font-family:var(--font-mono);padding:4px 0 12px">No one else has access yet.</p>'
+    : shares.map(s => `
+        <div class="share-row">
+          <span class="share-email">${h(s.shared_with_email)}</span>
+          <span class="share-role-badge ${s.role}">${s.role}</span>
+          <button class="share-remove-btn" onclick="removeShare('${h(s.id)}')" title="Remove">×</button>
+        </div>
+      `).join('');
+}
+
+async function renderShareTokens() {
+  const tokens = await window.kc.getShareTokens(sharingListId);
+  document.getElementById('share-token-rows').innerHTML = tokens.length === 0
+    ? '<p style="font-size:11px;color:var(--text-dim);font-family:var(--font-mono);padding:4px 0 8px">No active links.</p>'
+    : tokens.map(t => {
+        const link = `kcontacts://share/${t.id}`;
+        return `
+          <div class="share-token-row">
+            <span class="share-role-badge ${t.role}">${t.role}</span>
+            <span class="share-token-link" title="Click to copy" onclick="copyShareLink('${h(t.id)}')">${link}</span>
+            <button class="share-remove-btn" onclick="revokeShareToken('${h(t.id)}')" title="Revoke">×</button>
+          </div>`;
+      }).join('');
+}
+
+async function createShareLink() {
+  const role = document.getElementById('token-role-select').value;
+  const errEl = document.getElementById('token-error');
+  errEl.textContent = '';
+  try {
+    await window.kc.createShareToken(sharingListId, role);
+    await renderShareTokens();
+    toast('Link created — click it to copy');
+  } catch (err) { errEl.textContent = err.message; }
+}
+
+function copyShareLink(tokenId) {
+  const link = `kcontacts://share/${tokenId}`;
+  navigator.clipboard.writeText(link).then(
+    () => toast('Link copied to clipboard'),
+    () => toast('Copy failed', true)
+  );
+}
+
+async function revokeShareToken(tokenId) {
+  try {
+    await window.kc.deleteShareToken(tokenId);
+    await renderShareTokens();
+    toast('Link revoked');
+  } catch (err) { toast(err.message, true); }
+}
+
+async function addShareSubmit() {
+  const email = document.getElementById('share-email-input').value.trim();
+  const role  = document.getElementById('share-role-select').value;
+  const errEl = document.getElementById('share-error');
+  if (!email) { errEl.textContent = 'Enter an email address.'; return; }
+  errEl.textContent = '';
+  try {
+    await window.kc.addShare(sharingListId, email, role);
+    document.getElementById('share-email-input').value = '';
+    await renderShareRows();
+    toast(`Shared with ${email}`);
+  } catch (err) { errEl.textContent = err.message; }
+}
+
+async function removeShare(shareId) {
+  try {
+    await window.kc.removeShare(shareId);
+    await renderShareRows();
+    toast('Access removed');
+  } catch (err) { toast(err.message, true); }
+}
+
+async function handleShareToken(token) {
+  try {
+    const result = await window.kc.resolveShareToken(token);
+    if (result.alreadyHad) {
+      toast(`You already have access to "${result.listName}"`);
+    } else {
+      toast(`Added to "${result.listName}" as ${result.role}`);
+    }
+    // Refresh list so the newly shared list appears
+    await loadLists();
+    // Navigate into it
+    const list = lists.find(l => l.id === result.listId);
+    if (list) openList(list.id, list.role);
+  } catch (err) {
+    toast(err.message || 'Invalid or expired share link', true);
+  }
+}
+
+
+// ═══════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════
+let settingsPanel = 'account';
+
+function openSettings() {
+  document.getElementById('user-chip').classList.remove('open');
+  renderSettingsPanel();
+  document.getElementById('settings-overlay').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settings-overlay').classList.remove('open');
+}
+
+function switchSettingsPanel(panel) {
+  settingsPanel = panel;
+  document.querySelectorAll('.settings-nav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.panel === panel);
+  });
+  renderSettingsPanel();
+}
+
+function renderSettingsPanel() {
+  const el = document.getElementById('settings-panel-content');
+  if (settingsPanel === 'account') {
+    el.innerHTML = `
+      <div class="settings-page-title">Account</div>
+
+      <div class="settings-group">
+        <div class="settings-group-label">Email</div>
+        <div class="settings-row">
+          <span class="settings-row-label">${h(currentUser?.email || '—')}</span>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="settings-group-label">Password</div>
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-row-label">Reset password</div>
+            <div class="settings-row-desc">We'll send a reset link to your email address</div>
+          </div>
+          <button class="btn btn-ghost" style="font-size:11px;padding:5px 14px;flex-shrink:0" onclick="sendPasswordReset()">Send Reset Email</button>
+        </div>
+      </div>
+
+      <div class="settings-danger-group">
+        <div class="settings-danger-label">Danger Zone</div>
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-row-label">Sign out</div>
+            <div class="settings-row-desc">Sign out of your account on this device</div>
+          </div>
+          <button class="btn btn-ghost" style="font-size:11px;padding:5px 14px;flex-shrink:0;color:#FF5555;border-color:rgba(255,85,85,0.3)" onclick="doSignOut()">Sign Out</button>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-row-label">Delete account</div>
+            <div class="settings-row-desc">Permanently removes your account and all lists you own</div>
+          </div>
+          <button class="btn btn-ghost" style="font-size:11px;padding:5px 14px;flex-shrink:0;color:#FF5555;border-color:rgba(255,85,85,0.3)" onclick="toast('Contact support to delete your account', true)">Delete Account</button>
+        </div>
+      </div>`;
+  } else {
+    el.innerHTML = `
+      <div class="settings-page-title">About</div>
+      <div class="settings-group">
+        <div style="font-family:var(--font-mono);font-size:20px;font-weight:700;letter-spacing:0.06em;margin-bottom:6px">
+          K<span style="color:var(--accent)">:</span>CONTACTS
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);font-family:var(--font-mono);margin-bottom:32px">Version 1.0.0</div>
+        <div class="settings-row">
+          <span class="settings-row-label">AI Contact Discovery</span>
+          <span class="settings-row-value">Anthropic Claude</span>
+        </div>
+        <div class="settings-row">
+          <span class="settings-row-label">Database & Auth</span>
+          <span class="settings-row-value">Supabase</span>
+        </div>
+        <div class="settings-row">
+          <span class="settings-row-label">Platform</span>
+          <span class="settings-row-value">Electron</span>
+        </div>
+      </div>`;
+  }
+}
+
+async function sendPasswordReset() {
+  if (!currentUser?.email) return;
+  try {
+    await window.kc.resetPassword(currentUser.email);
+    toast(`Reset link sent to ${currentUser.email}`);
+  } catch (err) {
+    toast('Failed to send reset email: ' + err.message, true);
+  }
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+if (navigator.userAgent.includes('Electron')) {
+  document.body.classList.add('electron-app');
+}
+
+async function initApp() {
+  if (!window.kc) {
+    // No Electron bridge — fall back to local mode
+    loadDataLocal();
+    render();
+    return;
+  }
+
+  // Register email-confirm deep link handler (fires whether app was open or just launched)
+  if (window.kc?.onDeepLinkConfirm) {
+    window.kc.onDeepLinkConfirm(async ({ code }) => {
+      const errEl = document.getElementById('auth-error');
+      if (!code) {
+        // Supabase confirmed but no PKCE code came through — tell user to sign in
+        if (errEl) { errEl.style.color = 'var(--green)'; errEl.textContent = 'Email confirmed! You can now sign in.' }
+        else toast('Email confirmed! Sign in to continue.')
+        return
+      }
+      try {
+        const user = await window.kc.exchangeCode(code)
+        if (user) {
+          if (!currentUser) {
+            await onSignedIn(user)
+            toast('Email confirmed — you\'re signed in!')
+          } else {
+            toast('Email confirmed!')
+          }
+        }
+      } catch {
+        if (errEl) { errEl.style.color = 'var(--green)'; errEl.textContent = 'Email confirmed! You can now sign in.' }
+        else toast('Email confirmed! Sign in to continue.')
+      }
+    })
+  }
+
+  // Supabase credentials are baked in — go straight to auth check
+  const user = await window.kc.getSession();
+  if (!user) {
+    document.getElementById('auth-overlay').classList.remove('hidden');
+    return;
+  }
+
+  await onSignedIn(user);
+}
+
+initApp();
+</script>
+</body>
+</html>
