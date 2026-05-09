@@ -242,11 +242,13 @@
   .app.view-labels .sidebar-section { display: none; }
   .app.view-labels #label-list { display: none; }
   .app.view-labels main.artist-list {
-    display: grid;
-    grid-template-columns: 220px 1fr;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
     padding: 0;
   }
+  .app.view-labels aside { padding: 0; }
+  .app.view-labels .sidebar-footer { display: none; }
 
   /* Sidebar view toggle */
   .sidebar-view-toggle {
@@ -255,13 +257,12 @@
     margin-bottom: 6px;
   }
 
-  /* Label navigator (left column) */
+  /* Label navigator (in sidebar when labels view active) */
   #label-nav {
     display: none;
     flex-direction: column;
-    border-right: 1px solid var(--border);
     overflow-y: auto;
-    background: var(--surface);
+    flex: 1;
   }
   .app.view-labels #label-nav { display: flex; }
 
@@ -289,11 +290,12 @@
     color: var(--text-dim); letter-spacing: 0.03em;
   }
 
-  /* Contacts panel (right column) */
+  /* Contacts panel (full main area in labels view) */
   #label-contacts {
     display: none;
     flex-direction: column;
     overflow-y: auto;
+    flex: 1;
   }
   .app.view-labels #label-contacts { display: flex; }
 
@@ -322,10 +324,9 @@
     display: flex; flex-wrap: wrap; gap: 5px;
   }
   .lcp-artist-tag {
-    font-size: 10px; font-family: var(--font-mono);
-    color: var(--text-muted);
-    background: var(--card); border: 1px solid var(--border);
-    padding: 2px 8px; border-radius: 3px;
+    font-size: 10px; font-family: var(--font-mono); font-weight: 600;
+    padding: 3px 9px; border-radius: 3px;
+    border: 1px solid transparent;
   }
 
   .lcp-list {
@@ -351,6 +352,12 @@
     color: var(--text-dim); letter-spacing: 0.04em;
     pointer-events: none;
   }
+  .lcp-delete-btn {
+    position: absolute; top: 11px; right: 11px;
+    display: none;
+  }
+  .lcp-contact:hover::after { display: none; }
+  .lcp-contact:hover .lcp-delete-btn { display: flex; }
   .lcp-contact:hover {
     border-color: var(--border-light);
     border-left-color: var(--lcp-accent, var(--accent));
@@ -1668,6 +1675,7 @@
     </div>
     <div class="sidebar-section">Labels</div>
     <div id="label-list"></div>
+    <div id="label-nav"></div>
     <div class="sidebar-footer">
       <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="openArtistModal()">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
@@ -1693,7 +1701,6 @@
       </div>
     </div>
     <div id="artist-cards"></div>
-    <div id="label-nav"></div>
     <div id="label-contacts"></div>
   </main>
 
@@ -2381,7 +2388,7 @@ function buildLabelMap() {
         ec.name.toLowerCase() === c.name.toLowerCase() &&
         (ec.role || '').toLowerCase() === (c.role || '').toLowerCase()
       );
-      if (!dupe) map[a.label].contacts.push({ ...c, _fromArtist: a.name });
+      if (!dupe) map[a.label].contacts.push({ ...c, _fromArtist: a.name, _artistId: a.id });
     });
   });
   return map;
@@ -2440,6 +2447,7 @@ function renderLabelContacts(labelMap) {
           .map(a => h(a.name)).join(', ');
         return `
         <div class="lcp-contact">
+          <button class="lcp-delete-btn icon-btn sm danger" data-action="delete-contact" data-artist-id="${h(c._artistId)}" data-contact-id="${h(c.id)}" title="Delete contact">${iconTrash()}</button>
           <div class="lcp-contact-left">
             <div class="lcp-contact-header">
               <span class="lcp-contact-name">${h(c.name)}</span>
@@ -2463,7 +2471,10 @@ function renderLabelContacts(labelMap) {
         <span class="lcp-count">${contacts.length} contact${contacts.length!==1?'s':''}</span>
       </div>
       <div class="lcp-artists">
-        ${artistObjs.map(a => `<span class="lcp-artist-tag">${h(a.name)}</span>`).join('')}
+        ${artistObjs.map(a => {
+          const ast = getLabelStyle(a.label);
+          return `<span class="lcp-artist-tag" style="color:${ast.dot};background:${ast.dot}18;border-color:${ast.dot}50">${h(a.name)}</span>`;
+        }).join('')}
       </div>
     </div>
     <div class="lcp-list" style="--lcp-accent:${st.dot}">${contactRows}</div>`;
@@ -2568,7 +2579,6 @@ function renderDetail() {
       <div class="detail-badges">
         <span class="label-badge ${st.cls}">${h(a.label)}</span>
         <span class="label-badge" style="background:var(--card);color:var(--text-muted);border:1px solid var(--border)">${h(a.type||'group')}</span>
-        ${(a.genres||[]).map(g=>`<span class="genre-tag">${h(g)}</span>`).join('')}
       </div>
       <div class="detail-actions">
         <button class="icon-btn" data-action="scan-web" data-id="${h(a.id)}" title="Open web searches for A&R contacts">
@@ -3722,7 +3732,7 @@ async function sendPasswordReset() {
 // ═══════════════════════════════════════════
 // UPDATE CHECK
 // ═══════════════════════════════════════════
-const APP_VERSION  = '1.0.3'
+const APP_VERSION  = '1.0.4'
 const VERSION_URL  = 'https://raw.githubusercontent.com/gleyzeddonut/kpop-contacts/main/version.json'
 
 function semverGt(a, b) {
