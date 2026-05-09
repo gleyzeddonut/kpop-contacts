@@ -1329,6 +1329,13 @@
   }
   .electron-app .dashboard-topbar {
     padding-left: 104px;
+    -webkit-app-region: drag;
+  }
+  .electron-app .dashboard-topbar button,
+  .electron-app .dashboard-topbar a,
+  .electron-app .dashboard-topbar input,
+  .electron-app .dashboard-topbar span {
+    -webkit-app-region: no-drag;
   }
   .dashboard-content {
     max-width: 900px; margin: 0 auto; padding: 44px 40px 60px;
@@ -2861,7 +2868,7 @@ function initials(name) {
 
 function h(s) {
   if (!s) return '';
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
 
@@ -3713,7 +3720,7 @@ async function sendPasswordReset() {
 // ═══════════════════════════════════════════
 // UPDATE CHECK
 // ═══════════════════════════════════════════
-const APP_VERSION  = '1.0.1'
+const APP_VERSION  = '1.0.2'
 const VERSION_URL  = 'https://raw.githubusercontent.com/gleyzeddonut/kpop-contacts/main/version.json'
 
 function semverGt(a, b) {
