@@ -1560,9 +1560,42 @@
     color: var(--text-dim);
   }
   .list-loading p { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; }
+  /* ── UPDATE BAR ── */
+  #update-bar {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    height: 32px;
+    background: #1a1a2e;
+    border-bottom: 1px solid var(--accent);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  #update-bar a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 700;
+  }
+  #update-bar a:hover { text-decoration: underline; }
+  #update-bar-dismiss {
+    background: none; border: none; color: var(--text-dim);
+    cursor: pointer; font-size: 14px; line-height: 1;
+    padding: 0 4px; margin-left: 4px;
+  }
+  #update-bar-dismiss:hover { color: var(--text); }
+  body { display: flex; flex-direction: column; }
+  body > #update-bar ~ .app { height: auto; flex: 1; }
 </style>
 </head>
 <body>
+<div id="update-bar">
+  <span>✦ Update available:</span>
+  <a id="update-bar-link" href="#" onclick="window.open(this.href); return false" id="update-bar-link"></a>
+  <button id="update-bar-dismiss" onclick="dismissUpdateBar()" title="Dismiss">✕</button>
+</div>
 <div class="app">
 
   <!-- HEADER -->
@@ -3252,6 +3285,7 @@ async function onSignedIn(user) {
   // Register deep link listener once
   if (window.kc.onDeepLink) window.kc.onDeepLink(handleShareToken);
 
+  checkForUpdate();
   await loadLists();
 }
 
@@ -3647,6 +3681,40 @@ async function sendPasswordReset() {
   } catch (err) {
     toast('Failed to send reset email: ' + err.message, true);
   }
+}
+
+// ═══════════════════════════════════════════
+// UPDATE CHECK
+// ═══════════════════════════════════════════
+const APP_VERSION  = '1.0.0'
+const VERSION_URL  = 'https://raw.githubusercontent.com/gleyzeddonut/kpop-contacts/main/version.json'
+
+function semverGt(a, b) {
+  const pa = a.split('.').map(Number)
+  const pb = b.split('.').map(Number)
+  for (let i = 0; i < 3; i++) {
+    if (pa[i] > pb[i]) return true
+    if (pa[i] < pb[i]) return false
+  }
+  return false
+}
+
+async function checkForUpdate() {
+  try {
+    const res = await fetch(VERSION_URL)
+    if (!res.ok) return
+    const { version, downloadUrl } = await res.json()
+    if (semverGt(version, APP_VERSION)) {
+      const link = document.getElementById('update-bar-link')
+      link.textContent = `v${version} — Download`
+      link.href = downloadUrl
+      document.getElementById('update-bar').style.display = 'flex'
+    }
+  } catch {}
+}
+
+function dismissUpdateBar() {
+  document.getElementById('update-bar').style.display = 'none'
 }
 
 // ═══════════════════════════════════════════
