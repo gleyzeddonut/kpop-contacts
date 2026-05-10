@@ -8,11 +8,13 @@
     "pack": "electron-packager . K-CONTACTS --platform=darwin --overwrite --out=dist --ignore='^/dist'"
   },
   "devDependencies": {
-    "electron": "^35.0.0",
+    "electron": "^42.0.1",
     "electron-packager": "^17.1.2",
     "electron-reload": "^2.0.0-alpha.1"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.105.3"
+    "@phosphor-icons/web": "^2.1.2",
+    "@supabase/supabase-js": "^2.105.3",
+    "lucide": "^1.14.0"
   }
 }

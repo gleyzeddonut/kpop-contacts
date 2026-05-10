@@ -71,6 +71,9 @@ if (!app.isPackaged) {
 
 // ── Contact filtering helpers ──
 const GENERIC_EMAILS = ['info@', 'contact@', 'hello@', 'admin@', 'general@', 'support@', 'inquiry@', 'noreply@']
+function isProtectedEmail(email) {
+  return email.includes('email-protected') || email.includes('[email') || email.includes('cdn-cgi')
+}
 const SOCIAL_DOMAINS = ['twitter.com', 'x.com', 'instagram.com', 'linkedin.com', 'facebook.com', 'youtube.com', 'tiktok.com', 'weibo.com', 'weverse.io']
 function isUsableSocial(s) {
   if (!s) return false
@@ -142,6 +145,7 @@ RULES:
     .filter(c => {
       const email = String(c.email || '').toLowerCase()
       if (GENERIC_EMAILS.some(p => email.startsWith(p))) return false
+      if (email && isProtectedEmail(email)) return false
       return email || String(c.phone || '') || isUsableSocial(String(c.social || ''))
     })
     .map(c => ({
@@ -265,6 +269,11 @@ ipcMain.handle('artists:getAll', (_, { listId })         => db.getArtists(listId
 ipcMain.handle('artists:upsert', (_, { listId, artist }) => db.upsertArtist(listId, artist))
 ipcMain.handle('artists:delete', (_, { artistId })       => db.deleteArtistDb(artistId))
 
+// Contacts
+ipcMain.handle('contacts:getAll',  (_, { listId })           => db.getContacts(listId))
+ipcMain.handle('contacts:upsert',  (_, { listId, contact })  => db.upsertContact(listId, contact))
+ipcMain.handle('contacts:delete',  (_, { contactId })        => db.deleteContact(contactId))
+
 // Shares
 ipcMain.handle('shares:get',    (_, { listId })                    => db.getShares(listId))
 ipcMain.handle('shares:add',    (_, { listId, email, role })       => db.addShare(listId, email, role))
@@ -287,6 +296,18 @@ ipcMain.handle('realtime:subscribe', (_, { listId }) => {
 
 ipcMain.handle('realtime:unsubscribe', () => {
   db.unsubscribeArtists()
+})
+
+ipcMain.handle('realtime:subscribeContacts', (_, { listId }) => {
+  db.subscribeContacts(listId, (payload) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('realtime:contactChange', payload)
+    }
+  })
+})
+
+ipcMain.handle('realtime:unsubscribeContacts', () => {
+  db.unsubscribeContacts()
 })
 
 // ── Window ──

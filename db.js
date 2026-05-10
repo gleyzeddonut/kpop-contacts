@@ -208,8 +208,31 @@ async function resolveShareToken(tokenId) {
   return { listId: token.list_id, listName: token.lists?.name, role: token.role, alreadyHad: false }
 }
 
+// ── Contacts ──────────────────────────────────────────────────────────────
+async function getContacts(listId) {
+  const { data, error } = await client()
+    .from('contacts').select('*').eq('list_id', listId).order('created_at')
+  if (error) throw error
+  return data || []
+}
+
+async function upsertContact(listId, contact) {
+  const { list_id, created_at, ...rest } = contact
+  const { error } = await client().from('contacts').upsert(
+    { ...rest, list_id: listId, updated_at: new Date().toISOString() },
+    { onConflict: 'id' }
+  )
+  if (error) throw error
+}
+
+async function deleteContact(contactId) {
+  const { error } = await client().from('contacts').delete().eq('id', contactId)
+  if (error) throw error
+}
+
 // ── Realtime ──────────────────────────────────────────────────────────────
 let realtimeChannel = null
+let contactsChannel = null
 
 function subscribeArtists(listId, onEvent) {
   const sb = client()
@@ -224,6 +247,21 @@ function unsubscribeArtists() {
   if (!supabase || !realtimeChannel) return
   supabase.removeChannel(realtimeChannel)
   realtimeChannel = null
+}
+
+function subscribeContacts(listId, onEvent) {
+  const sb = client()
+  if (contactsChannel) sb.removeChannel(contactsChannel)
+  contactsChannel = sb
+    .channel(`contacts_${listId}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'contacts', filter: `list_id=eq.${listId}` }, onEvent)
+    .subscribe()
+}
+
+function unsubscribeContacts() {
+  if (!supabase || !contactsChannel) return
+  supabase.removeChannel(contactsChannel)
+  contactsChannel = null
 }
 
 // ── Shares ────────────────────────────────────────────────────────────────
@@ -251,7 +289,9 @@ module.exports = {
   init, signUp, signIn, signOut, resetPassword, getSession, getAccessToken, exchangeCodeForSession,
   getLists, createList, renameList, deleteList,
   getArtists, upsertArtist, deleteArtistDb,
+  getContacts, upsertContact, deleteContact,
   getShares, addShare, removeShare,
   createShareToken, getShareTokens, deleteShareToken, resolveShareToken,
   subscribeArtists, unsubscribeArtists,
+  subscribeContacts, unsubscribeContacts,
 }

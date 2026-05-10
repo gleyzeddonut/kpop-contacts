@@ -28,17 +28,30 @@ contextBridge.exposeInMainWorld('kc', {
   upsertArtist:  (listId, artist)           => ipcRenderer.invoke('artists:upsert', { listId, artist }),
   deleteArtist:  (artistId)                 => ipcRenderer.invoke('artists:delete', { artistId }),
 
+  // Contacts
+  getContacts:    (listId)                  => ipcRenderer.invoke('contacts:getAll',  { listId }),
+  upsertContact:  (listId, contact)         => ipcRenderer.invoke('contacts:upsert',  { listId, contact }),
+  deleteContact:  (contactId)               => ipcRenderer.invoke('contacts:delete',  { contactId }),
+
   // Shares
   getShares:     (listId)                   => ipcRenderer.invoke('shares:get',    { listId }),
   addShare:      (listId, email, role)      => ipcRenderer.invoke('shares:add',    { listId, email, role }),
   removeShare:   (shareId)                  => ipcRenderer.invoke('shares:remove', { shareId }),
 
-  // Realtime
+  // Realtime — artists
   subscribeToList:    (listId) => ipcRenderer.invoke('realtime:subscribe', { listId }),
   unsubscribeFromList: ()      => ipcRenderer.invoke('realtime:unsubscribe'),
   onArtistChange: (cb) => {
     ipcRenderer.removeAllListeners('realtime:change')
     ipcRenderer.on('realtime:change', (_, payload) => cb(payload))
+  },
+
+  // Realtime — contacts
+  subscribeToContacts:    (listId) => ipcRenderer.invoke('realtime:subscribeContacts', { listId }),
+  unsubscribeFromContacts: ()      => ipcRenderer.invoke('realtime:unsubscribeContacts'),
+  onContactChange: (cb) => {
+    ipcRenderer.removeAllListeners('realtime:contactChange')
+    ipcRenderer.on('realtime:contactChange', (_, payload) => cb(payload))
   },
 
   // Share tokens
