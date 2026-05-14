@@ -3417,7 +3417,7 @@ document.addEventListener('drop', async e => {
   toast('Importing brief PDF…');
   let parsed;
   try {
-    parsed = await window.kc.importBriefPdfFromPath(file.path);
+    parsed = await window.kc.importBriefPdfFromPath(window.kc.getPathForFile(file));
   } catch (err) {
     toast('Import failed: ' + err.message, true);
     return;

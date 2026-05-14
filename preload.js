@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron')
+const { contextBridge, ipcRenderer, webUtils } = require('electron')
 
 contextBridge.exposeInMainWorld('kc', {
   // Config
@@ -36,6 +36,7 @@ contextBridge.exposeInMainWorld('kc', {
   // Briefs
   importBriefPdf: ()                        => ipcRenderer.invoke('briefs:import'),
   importBriefPdfFromPath: (filePath)        => ipcRenderer.invoke('briefs:importFromPath', { filePath }),
+  getPathForFile: (file)                    => webUtils.getPathForFile(file),
   getBriefs:      (listId)                  => ipcRenderer.invoke('briefs:getAll',  { listId }),
   upsertBrief:    (listId, brief)           => ipcRenderer.invoke('briefs:upsert',  { listId, brief }),
   deleteBrief:    (briefId)                 => ipcRenderer.invoke('briefs:delete',  { briefId }),
