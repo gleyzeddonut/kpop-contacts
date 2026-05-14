@@ -275,32 +275,24 @@
     flex-shrink: 0;
   }
 
-  .list-meta {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 2px 4px 10px;
+  .list-filter-wrap {
+    padding: 6px 6px 4px;
+    flex-shrink: 0;
   }
-  .sort-bar {
-    display: flex; gap: 2px;
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: var(--r-pill); padding: 3px;
+  .list-filter-input {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 10px;
+    padding: 5px 8px;
+    outline: none;
   }
-  .sort-btn {
-    font-family: var(--font-mono); font-size: 9px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.05em;
-    padding: 4px 9px; border-radius: var(--r-pill); border: none;
-    background: transparent; color: var(--text-dim);
-    cursor: pointer; transition: all 0.12s; white-space: nowrap;
-  }
-  .sort-btn.active { background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(255,45,120,0.3); }
-  .sort-btn:hover:not(.active) { color: var(--text-muted); background: var(--card-hover); }
-  .artist-count {
-    font-size: 11px;
-    font-family: var(--font-mono);
-    color: var(--text-muted);
-    letter-spacing: 0.04em;
-  }
+  .list-filter-input::placeholder { color: var(--text-dim); }
+  .list-filter-input:focus { border-color: var(--accent); }
 
 
   /* ── DETAIL PANEL ── */
@@ -1566,14 +1558,8 @@
       <svg class="list-title-edit-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
       <input type="text" class="list-title-input" id="list-title-input" onblur="saveListName()" onkeydown="listTitleKeydown(event)">
     </div>
-    <div class="list-meta">
-      <span class="artist-count" id="artist-count"></span>
-      <div class="sort-bar" id="sort-bar">
-        <button class="sort-btn active" data-sort="name"   onclick="setSortMode('name')">Name</button>
-        <button class="sort-btn"        data-sort="date"   onclick="setSortMode('date')">Date</button>
-        <button class="sort-btn"        data-sort="label"  onclick="setSortMode('label')">Label</button>
-        <button class="sort-btn"        data-sort="custom" onclick="setSortMode('custom')">Custom</button>
-      </div>
+    <div class="list-filter-wrap">
+      <input class="list-filter-input" id="list-filter-input" type="text" placeholder="Filter artists…" oninput="setListFilter(this.value)">
     </div>
     <div id="artist-cards"></div>
   </main>
@@ -1995,6 +1981,7 @@ let contacts = [];
 let selectedId = null;
 let activeLabel = 'all';
 let searchQuery = '';
+let listSearchQuery = '';
 let sortMode = 'name';
 let customOrder = [];
 let dragSrcId = null;
@@ -2169,8 +2156,12 @@ function setSortMode(mode) {
   }
   sortMode = mode;
   saveSortMode();
-  document.querySelectorAll('.sort-btn').forEach(b => b.classList.toggle('active', b.dataset.sort === mode));
   render();
+}
+
+function setListFilter(val) {
+  listSearchQuery = val;
+  renderList();
 }
 
 function getSorted(list) {
@@ -2232,6 +2223,10 @@ function getFiltered() {
   const filtered = artists.filter(a => {
     if (a._scanning) return true;
     if (activeLabel !== 'all' && a.label !== activeLabel) return false;
+    if (listSearchQuery) {
+      const lq = listSearchQuery.toLowerCase();
+      if (!a.name.toLowerCase().includes(lq) && !(a.label||'').toLowerCase().includes(lq)) return false;
+    }
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return a.name.toLowerCase().includes(q)
@@ -2299,8 +2294,6 @@ function artistStatusDot(artistId) {
 
 function renderList() {
   const list = getFiltered();
-  document.getElementById('artist-count').textContent =
-    `${list.length} artist${list.length !== 1 ? 's' : ''}`;
 
   const cardsEl = document.getElementById('artist-cards');
   cardsEl.className = sortMode === 'custom' ? 'sort-custom' : '';
@@ -2309,7 +2302,7 @@ function renderList() {
     cardsEl.innerHTML = `
       <div class="empty-list">
         <div class="ei">◈</div>
-        <p>${searchQuery ? 'no results found' : 'no artists yet'}</p>
+        <p>${(searchQuery || listSearchQuery) ? 'no results found' : 'no artists yet'}</p>
       </div>`;
     return;
   }
@@ -3464,10 +3457,12 @@ async function openList(listId, role) {
   selectedId = null;
   activeLabel = 'all';
   searchQuery = '';
+  listSearchQuery = '';
   sortMode = loadSortMode();
   customOrder = loadCustomOrder();
   document.getElementById('search').value = '';
-  document.querySelectorAll('.sort-btn').forEach(b => b.classList.toggle('active', b.dataset.sort === sortMode));
+  const lfi = document.getElementById('list-filter-input');
+  if (lfi) lfi.value = '';
   document.body.classList.toggle('role-viewer', role === 'viewer');
 
   setListTitleDisplay(currentListName, role);
