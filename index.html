@@ -2591,7 +2591,7 @@ function updateContactArtistSection(labelVal) {
   section.style.display = '';
   listEl.innerHTML = matchingArtists.map(a => `
     <label class="contact-artist-check">
-      <input type="checkbox" value="${h(a.id)}">
+      <input type="checkbox" name="contact-artist-id" value="${h(a.id)}">
       ${h(a.name)}
     </label>
   `).join('');
