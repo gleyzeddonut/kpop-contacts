@@ -2862,6 +2862,7 @@ function selectArtist(id) {
   selectedId = id;
   selectedContactId = null;
   wsStatusFilter = 'all';
+  wsTab = 'contacts';
   render();
   if (window.innerWidth < 960) {
     document.getElementById('detail-panel').classList.add('mobile-open');
