@@ -1447,8 +1447,7 @@
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
         Share
       </button>
-      <button class="btn btn-ghost" id="import-btn" onclick="openArtistModal();switchArtistTab('bulk')" style="display:none;font-size:11px;padding:5px 12px">Import</button>
-      <button class="btn btn-primary" id="add-artist-btn" onclick="openArtistModal()" style="display:none;font-size:11px;padding:5px 14px;gap:5px">
+<button class="btn btn-primary" id="add-artist-btn" onclick="openArtistModal()" style="display:none;font-size:11px;padding:5px 14px;gap:5px">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
         Add Artist
       </button>
@@ -3207,7 +3206,6 @@ async function doSignOut() {
   document.getElementById('header-settings-btn').style.display = 'none';
   document.getElementById('share-list-btn').style.display = 'none';
   document.getElementById('back-to-lists-btn').style.display = 'none';
-  document.getElementById('import-btn').style.display = 'none';
   document.getElementById('add-artist-btn').style.display = 'none';
   document.getElementById('settings-overlay').classList.remove('open');
   document.getElementById('dashboard-overlay').classList.add('hidden');
@@ -3307,7 +3305,6 @@ function showDashboard() {
   document.getElementById('dashboard-overlay').classList.remove('hidden');
   document.getElementById('back-to-lists-btn').style.display = 'none';
   document.getElementById('share-list-btn').style.display = 'none';
-  document.getElementById('import-btn').style.display = 'none';
   document.getElementById('add-artist-btn').style.display = 'none';
   selectedId = null;
   currentListId = null;
@@ -3383,7 +3380,6 @@ async function openList(listId, role) {
   document.getElementById('dashboard-overlay').classList.add('hidden');
   document.getElementById('back-to-lists-btn').style.display = '';
   document.getElementById('share-list-btn').style.display = role === 'owner' ? '' : 'none';
-  document.getElementById('import-btn').style.display = role !== 'viewer' ? '' : 'none';
   document.getElementById('add-artist-btn').style.display = role !== 'viewer' ? '' : 'none';
   artists = []; contacts = [];
   currentListId   = listId;
