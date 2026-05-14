@@ -2830,10 +2830,6 @@ function renderNotesPanel(contact) {
           <div class="np-note-text">${h(entry.text)}</div>
         </div>`).join('');
 
-  const socialUrl = contact.social
-    ? `https://instagram.com/${encodeURIComponent(contact.social.replace(/^@/,''))}`
-    : '';
-
   panel.innerHTML = `
     <div class="np-header">
       <div style="display:flex;justify-content:flex-end;margin-bottom:6px">
@@ -2860,9 +2856,12 @@ function renderNotesPanel(contact) {
       </div>
     </div>
     <div class="np-actions">
-      <button class="np-action-btn" ${contact.email?'':'disabled'} onclick="${contact.email?`window.open('mailto:${h(contact.email)}','_blank')`:''}">✉ Email</button>
-      <button class="np-action-btn" ${contact.email?'':'disabled'} onclick="${contact.email?`copyText('${h(contact.email)}')`:''}">⎘ Copy</button>
-      <button class="np-action-btn" ${contact.social?'':'disabled'} onclick="${contact.social?`window.open('${socialUrl}','_blank')`:''}">↗ DM</button>
+      <button class="np-action-btn" ${contact.email?'':'disabled'}
+        data-action="np-email" data-value="${h(contact.email||'')}">✉ Email</button>
+      <button class="np-action-btn" ${contact.email?'':'disabled'}
+        data-action="np-copy" data-value="${h(contact.email||'')}">⎘ Copy</button>
+      <button class="np-action-btn" ${contact.social?'':'disabled'}
+        data-action="np-dm" data-value="${h(contact.social||'')}">↗ DM</button>
     </div>
     <div class="np-notes-area">
       <div class="np-notes-section-label">Notes</div>
@@ -3512,6 +3511,21 @@ document.addEventListener('click', e => {
   else if (action === 'mailto') {
     const email = el.dataset.value;
     if (email) window.open(`mailto:${email}`, '_blank');
+  }
+  else if (action === 'np-email') {
+    const email = el.dataset.value;
+    if (email) window.open(`mailto:${encodeURIComponent(email)}`, '_blank');
+  }
+  else if (action === 'np-copy') {
+    const email = el.dataset.value;
+    if (email) copyText(email);
+  }
+  else if (action === 'np-dm') {
+    const social = el.dataset.value;
+    if (social) {
+      const handle = social.replace(/^@/, '');
+      window.open(`https://instagram.com/${encodeURIComponent(handle)}`, '_blank');
+    }
   }
 });
 
