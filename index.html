@@ -462,12 +462,18 @@
     display: flex;
   }
 
+  #detail-content {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+
   .detail-empty {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100%;
+    flex: 1;
     gap: 10px;
     color: var(--text-dim);
   }
