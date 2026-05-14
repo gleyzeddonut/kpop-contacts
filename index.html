@@ -1202,6 +1202,10 @@
   .role-viewer .icon-btn[data-action="scan-web"] { display: none !important; }
   .role-viewer #artist-add-footer-btn { display: none !important; }
   .role-viewer .np-close[data-action="delete-contact"] { display: none !important; }
+  .role-viewer .np-field { pointer-events: none; opacity: 0.7; }
+  .role-viewer .np-status-dot { pointer-events: none; opacity: 0.3 !important; }
+  .role-viewer .np-add-note-btn { display: none; }
+  .role-viewer .add-contact-row { display: none; }
 
   /* ── DASHBOARD ── */
   .dashboard-overlay {
@@ -2398,7 +2402,7 @@ function renderDetail() {
         <div class="ctr-num">${i+1}</div>
         <div class="ctr-name">${h(c.name)}</div>
         <div class="ctr-role">${h(c.role||'—')}</div>
-        <div class="ctr-email" data-action="copy" data-value="${h(c.email||'')}">${h(c.email||'—')}</div>
+        <div class="ctr-email" ${c.email ? `data-action="copy" data-value="${h(c.email)}"` : ''}>${h(c.email||'—')}</div>
         <div><span class="status-badge ${safeStatus}">${statusLabel(safeStatus)}</span></div>
         <div class="ctr-actions">
           ${c.email ? `<button class="ctr-btn" data-action="mailto" data-value="${h(c.email)}" title="Email">✉</button>` : ''}
@@ -3043,13 +3047,6 @@ document.addEventListener('click', e => {
   else if (action === 'scan-web')       scanWeb(el.dataset.id);
   else if (action === 'edit-artist')    openArtistModal(el.dataset.id);
   else if (action === 'delete-artist')  confirmDelete('artist', el.dataset.id);
-  else if (action === 'edit-contact') {
-    const contactId = el.dataset.contactId;
-    if (contactId) {
-      selectedContactId = selectedContactId === contactId ? null : contactId;
-      renderDetail();
-    }
-  }
   else if (action === 'delete-contact') {
     const contactId = el.dataset.contactId;
     if (contactId) confirmDelete('contact', contactId);
