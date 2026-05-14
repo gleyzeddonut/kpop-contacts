@@ -1,5 +1,6 @@
-const { app, BrowserWindow, shell, Menu, ipcMain } = require('electron')
+const { app, BrowserWindow, shell, Menu, ipcMain, dialog } = require('electron')
 const path = require('path')
+const fs = require('fs')
 const db = require('./db')
 
 // ── Custom protocol for share links (kcontacts://share/{token}) ──
@@ -235,6 +236,77 @@ RULES:
   }
 }
 
+// ── Claude API: parse a brief PDF ──
+async function parseBriefPdf(filePath) {
+  const buffer = fs.readFileSync(filePath)
+  const base64 = buffer.toString('base64')
+
+  const prompt = `Extract all brief information from this PDF and return valid JSON matching this schema exactly:
+{
+  "label": "string",
+  "submission_emails": ["string"],
+  "artists": [
+    {
+      "name": "string",
+      "deadline": "string or null",
+      "general_direction": "string or null",
+      "track_types": [
+        {
+          "name": "string",
+          "tags": ["string"],
+          "wants": ["string"],
+          "avoids": ["string"],
+          "references": [{ "title": "string", "url": "string" }]
+        }
+      ]
+    }
+  ]
+}
+
+Rules:
+- label: the issuing label name (e.g. "SM Entertainment").
+- submission_emails: all email addresses from the cover/intro page.
+- artists: one entry per artist section in the PDF.
+- deadline: extract as-is ("ASAP", "By May 8th", "early June"). null if not stated.
+- general_direction: the [General Direction] block if present, else null.
+- tags: hashtags found in the track type heading (e.g. #GenZ_Energy). Empty array if none.
+- wants: bullet points describing what they want. Also include items under "Please include:".
+- avoids: bullet points under "Please avoid:" or explicit negations in direction text.
+- references: YouTube/music URLs with their track title. Empty array if "No specific references provided".
+Return ONLY the JSON object. No markdown, no code fences, no explanation.`
+
+  const data = await callClaude({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 4096,
+    messages: [{
+      role: 'user',
+      content: [
+        {
+          type: 'document',
+          source: {
+            type: 'base64',
+            media_type: 'application/pdf',
+            data: base64,
+          },
+        },
+        { type: 'text', text: prompt },
+      ],
+    }],
+  })
+
+  const text = (data.content || [])
+    .filter(b => b.type === 'text')
+    .map(b => b.text)
+    .join('')
+  if (!text) throw new Error('No response from Claude')
+
+  const match = text.match(/\{[\s\S]*\}/)
+  if (!match) throw new Error('Claude did not return a JSON object')
+
+  try { return JSON.parse(match[0]) }
+  catch { throw new Error('Claude returned unparseable JSON') }
+}
+
 // ── IPC handlers ──
 
 // Config (API key + Supabase credentials)
@@ -249,6 +321,26 @@ ipcMain.handle('scan-contacts', async (_, { artistName, label }) => {
 ipcMain.handle('scan-artist', async (_, { artistName }) => {
   return await scanArtist(artistName)
 })
+
+// Briefs
+ipcMain.handle('briefs:import', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    title: 'Import Brief PDF',
+    filters: [{ name: 'PDF', extensions: ['pdf'] }],
+    properties: ['openFile'],
+  })
+  if (canceled || filePaths.length === 0) return null
+  const filePath = filePaths[0]
+  const stat = fs.statSync(filePath)
+  if (stat.size > 10 * 1024 * 1024) throw new Error('PDF too large (max 10MB)')
+  const parsed = await parseBriefPdf(filePath)
+  parsed._sourcePdf = path.basename(filePath)
+  return parsed
+})
+
+ipcMain.handle('briefs:getAll',  (_, { listId })          => db.getBriefs(listId))
+ipcMain.handle('briefs:upsert',  (_, { listId, brief })   => db.upsertBrief(listId, brief))
+ipcMain.handle('briefs:delete',  (_, { briefId })         => db.deleteBrief(briefId))
 
 // Auth
 ipcMain.handle('auth:signup',          (_, { email, password }) => db.signUp(email, password))
