@@ -1989,6 +1989,8 @@ let customOrder = [];
 let dragSrcId = null;
 let confirmCallback = null;
 let wsStatusFilter = 'all'; // filter pill selection in workspace
+let briefs = [];          // all briefs for current list
+let wsTab = 'contacts';   // 'contacts' | 'briefs'
 let selectedContactId = null; // contact whose notes panel is open
 
 // ── Scan queue ──
@@ -2007,11 +2009,13 @@ async function loadListArtists(listId) {
   document.getElementById('artist-cards').innerHTML =
     '<div class="list-loading"><div class="scan-spinner" style="width:18px;height:18px;border-width:2px"></div><p>Loading…</p></div>';
   try {
-    const [loadedArtists, loadedContacts] = await Promise.all([
+    const [loadedArtists, loadedContacts, loadedBriefs] = await Promise.all([
       window.kc.getArtists(listId),
       window.kc.getContacts ? window.kc.getContacts(listId) : Promise.resolve([]),
+      window.kc.getBriefs ? window.kc.getBriefs(listId) : Promise.resolve([]),
     ]);
     artists = loadedArtists;
+    briefs = loadedBriefs;
     contacts = loadedContacts.map(c => ({
       ...c,
       status: c.status || 'cold',
@@ -2045,6 +2049,12 @@ async function syncContact(contact) {
 async function syncDeleteContact(contactId) {
   if (!window.kc.deleteContact) return;
   try { await window.kc.deleteContact(contactId) }
+  catch (err) { toast('Sync error: ' + err.message, true) }
+}
+
+async function syncBrief(brief) {
+  if (!currentListId) return;
+  try { await window.kc.upsertBrief(currentListId, brief) }
   catch (err) { toast('Sync error: ' + err.message, true) }
 }
 
