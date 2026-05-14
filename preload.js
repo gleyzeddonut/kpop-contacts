@@ -33,6 +33,12 @@ contextBridge.exposeInMainWorld('kc', {
   upsertContact:  (listId, contact)         => ipcRenderer.invoke('contacts:upsert',  { listId, contact }),
   deleteContact:  (contactId)               => ipcRenderer.invoke('contacts:delete',  { contactId }),
 
+  // Briefs
+  importBriefPdf: ()                        => ipcRenderer.invoke('briefs:import'),
+  getBriefs:      (listId)                  => ipcRenderer.invoke('briefs:getAll',  { listId }),
+  upsertBrief:    (listId, brief)           => ipcRenderer.invoke('briefs:upsert',  { listId, brief }),
+  deleteBrief:    (briefId)                 => ipcRenderer.invoke('briefs:delete',  { briefId }),
+
   // Shares
   getShares:     (listId)                   => ipcRenderer.invoke('shares:get',    { listId }),
   addShare:      (listId, email, role)      => ipcRenderer.invoke('shares:add',    { listId, email, role }),
