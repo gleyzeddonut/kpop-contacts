@@ -1528,9 +1528,9 @@
       <div id="lists-list"></div>
       <div class="sidebar-divider"></div>
     </div>
-<div class="sidebar-section">Labels</div>
+    <div class="sidebar-section">Labels</div>
     <div id="label-list"></div>
-<div class="sidebar-footer">
+    <div class="sidebar-footer">
       <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="openArtistModal()">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
         Add Artist
@@ -2577,6 +2577,26 @@ function deleteArtist(id) {
 }
 
 // ─── CONTACT CRUD ───
+function updateContactArtistSection(labelVal) {
+  const matchingArtists = artists.filter(a =>
+    a.label && a.label.toLowerCase() === labelVal.toLowerCase()
+  );
+  const section = document.getElementById('contact-artists-section');
+  const listEl = document.getElementById('contact-artists-list');
+  if (!section || !listEl) return;
+  if (matchingArtists.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = '';
+  listEl.innerHTML = matchingArtists.map(a => `
+    <label class="contact-artist-check">
+      <input type="checkbox" value="${h(a.id)}">
+      ${h(a.name)}
+    </label>
+  `).join('');
+}
+
 function openContactModal({ artistId = null, label = '', contactId = null } = {}) {
   document.getElementById('contact-modal-title').textContent = contactId ? 'Edit Contact' : 'Add Contact';
 
