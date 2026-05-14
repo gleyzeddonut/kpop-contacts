@@ -3695,6 +3695,7 @@ async function onSignedIn(user) {
   // Register realtime listeners once (survives list switches)
   if (window.kc.onArtistChange) window.kc.onArtistChange(handleRealtimeChange);
   if (window.kc.onContactChange) window.kc.onContactChange(handleContactRealtimeChange);
+  if (window.kc.onBriefProgress) window.kc.onBriefProgress(msg => toast(msg));
 
   // Register deep link listener once
   if (window.kc.onDeepLink) window.kc.onDeepLink(handleShareToken);

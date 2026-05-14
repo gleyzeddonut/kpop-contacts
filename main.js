@@ -236,10 +236,19 @@ RULES:
   }
 }
 
+function briefProgress(msg) {
+  console.log('[brief]', msg)
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('brief:progress', msg)
+  }
+}
+
 // ── Claude API: parse a brief PDF ──
 async function parseBriefPdf(filePath) {
   const buffer = fs.readFileSync(filePath)
+  briefProgress(`Read file: ${filePath} (${(buffer.length / 1024).toFixed(0)} KB)`)
   const base64 = buffer.toString('base64')
+  briefProgress(`Encoded to base64 (${(base64.length / 1024).toFixed(0)} KB) — sending to Claude…`)
 
   const prompt = `Extract all brief information from this PDF and return valid JSON matching this schema exactly:
 {
@@ -294,6 +303,9 @@ Return ONLY the JSON object. No markdown, no code fences, no explanation.`
     }],
   })
 
+  briefProgress('Claude responded — parsing JSON…')
+  console.log('[brief] raw response content blocks:', JSON.stringify(data.content?.map(b => ({ type: b.type, len: b.text?.length }))))
+
   const text = (data.content || [])
     .filter(b => b.type === 'text')
     .map(b => b.text)
@@ -303,8 +315,11 @@ Return ONLY the JSON object. No markdown, no code fences, no explanation.`
   const match = text.match(/\{[\s\S]*\}/)
   if (!match) throw new Error('Claude did not return a JSON object')
 
-  try { return JSON.parse(match[0]) }
+  let parsed
+  try { parsed = JSON.parse(match[0]) }
   catch { throw new Error('Claude returned unparseable JSON') }
+  briefProgress(`Parsed: ${parsed.artists?.length ?? 0} artists, label: ${parsed.label}`)
+  return parsed
 }
 
 // ── IPC handlers ──

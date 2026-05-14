@@ -69,6 +69,11 @@ contextBridge.exposeInMainWorld('kc', {
   resolveShareToken: (tokenId)      => ipcRenderer.invoke('tokens:resolve', { tokenId }),
 
   // Deep link
+  onBriefProgress: (cb) => {
+    ipcRenderer.removeAllListeners('brief:progress')
+    ipcRenderer.on('brief:progress', (_, msg) => cb(msg))
+  },
+
   onDeepLink: (cb) => {
     ipcRenderer.removeAllListeners('deep-link:share')
     ipcRenderer.on('deep-link:share', (_, token) => cb(token))
