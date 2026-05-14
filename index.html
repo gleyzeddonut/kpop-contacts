@@ -222,137 +222,8 @@
     gap: 3px;
   }
 
-  /* ── VIEW TOGGLE ── */
-  .view-toggle {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: var(--r-md);
-    padding: 3px;
-    gap: 3px;
-  }
-  .view-btn {
-    font-family: var(--font-display);
-    font-size: 11px; font-weight: 600;
-    letter-spacing: 0.02em;
-    padding: 8px 4px; border-radius: var(--r-sm); border: none;
-    background: transparent; color: var(--text-muted);
-    cursor: pointer; transition: all 0.15s;
-    text-align: center; line-height: 1;
-  }
-  .view-btn.active {
-    background: var(--accent); color: #fff;
-    box-shadow: 0 2px 12px rgba(255, 45, 120, 0.35);
-  }
-  .view-btn:hover:not(.active) { color: var(--text); background: var(--card); }
 
-  /* ── CONTACTS VIEW — full-width address book ── */
-  .app.view-contacts { grid-template-columns: 210px 1fr; }
-  .app.view-contacts .detail-panel { display: none; }
-  .app.view-contacts .list-meta { display: none; }
-  .app.view-contacts .list-title-section { display: none !important; }
-  .app.view-contacts #artist-cards { display: none; }
-  .app.view-contacts .sidebar-section { display: block; }
-  .app.view-contacts #label-list { display: none; }
-  .app.view-contacts #contacts-label-nav { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow-y: auto; }
-  .app.view-contacts aside { padding: 0; }
-  .app.view-contacts .sidebar-footer { display: none; }
-  .app.view-contacts main.artist-list { display: flex; flex-direction: column; overflow: hidden; padding: 0; }
-  .app.view-contacts #contacts-view { display: flex; }
 
-  #contacts-label-nav { display: none; }
-
-  #contacts-view {
-    display: none; flex-direction: column; overflow-y: auto; flex: 1; min-height: 0;
-  }
-
-  .cb-topbar {
-    padding: 14px 20px; border-bottom: 1px solid var(--border);
-    background: var(--surface); display: flex; align-items: center;
-    gap: 10px; flex-shrink: 0;
-  }
-  .cb-search {
-    flex: 1; background: var(--bg); border: 1px solid var(--border);
-    border-radius: var(--r-pill); padding: 7px 14px; color: var(--text);
-    font-size: 12px; font-family: var(--font-display); outline: none;
-    transition: border-color 0.15s, box-shadow 0.15s;
-  }
-  .cb-search:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,45,120,0.1); }
-  .cb-count { font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); white-space: nowrap; }
-  .cb-sort { display: flex; gap: 4px; }
-
-  .cb-list { display: flex; flex-direction: column; gap: 8px; padding: 14px 20px; }
-
-  .cb-card {
-    background: var(--card); border: 1px solid var(--border);
-    border-left: 3px solid var(--border); border-radius: var(--r-md);
-    padding: 11px 14px;
-    display: flex; flex-direction: column;
-    transition: border-color 0.15s, background 0.15s; cursor: pointer;
-  }
-  .cb-card:hover, .cb-card.expanded { border-color: var(--border-light); background: var(--card-hover); }
-  .cb-card-top { display: flex; align-items: center; gap: 12px; }
-  .cb-avatar {
-    width: 34px; height: 34px; border-radius: var(--r-sm); background: var(--surface);
-    border: 1px solid var(--border); display: flex; align-items: center;
-    justify-content: center; font-size: 12px; font-weight: 700;
-    font-family: var(--font-display); color: var(--text-muted); flex-shrink: 0;
-  }
-  .cb-info { flex: 1; min-width: 0; }
-  .cb-name { font-size: 13px; font-weight: 600; font-family: var(--font-display); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .cb-company { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
-  .cb-chevron { color: var(--text-dim); flex-shrink: 0; transition: transform 0.2s; }
-  .cb-card.expanded .cb-chevron { transform: rotate(90deg); }
-  .cb-actions { display: flex; gap: 4px; flex-shrink: 0; opacity: 0; transition: opacity 0.12s; }
-  .cb-card:hover .cb-actions, .cb-card.expanded .cb-actions { opacity: 1; }
-
-  .cb-details {
-    display: none; flex-direction: column; gap: 6px;
-    padding-top: 10px; margin-top: 10px;
-    border-top: 1px solid var(--border);
-  }
-  .cb-card.expanded .cb-details { display: flex; }
-  .cb-detail-row {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 12px; color: var(--text-muted);
-  }
-  .cb-detail-row svg { color: var(--text-dim); flex-shrink: 0; }
-  .cb-detail-row a { color: var(--text-muted); text-decoration: none; }
-  .cb-detail-row a:hover { color: var(--accent); }
-  .cb-detail-role {
-    font-size: 9px; font-family: var(--font-mono); text-transform: uppercase;
-    letter-spacing: 0.08em; color: var(--text-muted);
-    background: var(--surface); border: 1px solid var(--border-light);
-    padding: 2px 9px; border-radius: var(--r-pill);
-  }
-  .cb-detail-via { font-size: 10px; font-family: var(--font-mono); color: var(--text-dim); }
-  .cb-detail-notes {
-    font-size: 11px; color: var(--text-dim); line-height: 1.55;
-    font-style: italic; padding-top: 2px;
-  }
-  .cb-copy {
-    font-size: 9px; font-family: var(--font-mono); font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.06em;
-    padding: 2px 8px; border-radius: var(--r-pill);
-    border: 1px solid var(--border); background: var(--surface);
-    color: var(--text-dim); cursor: pointer;
-    transition: all 0.12s; white-space: nowrap; flex-shrink: 0;
-  }
-  .cb-copy:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
-
-  .cb-empty {
-    display: flex; flex-direction: column; align-items: center;
-    justify-content: center; gap: 10px; padding: 60px 20px;
-    color: var(--text-dim); font-family: var(--font-mono); font-size: 12px;
-  }
-
-  /* Sidebar view toggle */
-  .sidebar-view-toggle {
-    padding: 10px 12px 12px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 6px;
-  }
 
   .list-meta {
     display: flex;
@@ -1309,8 +1180,6 @@
   .role-viewer .icon-btn[data-action="add-contact"] { display: none !important; }
   .role-viewer .icon-btn[data-action="scan-web"] { display: none !important; }
   .role-viewer .add-contact-btn { display: none !important; }
-  .role-viewer .cb-actions .icon-btn.danger { display: none !important; }
-  .role-viewer .cb-actions .icon-btn[data-action="edit-contact"] { display: none !important; }
   .role-viewer #artist-add-footer-btn { display: none !important; }
 
   /* ── DASHBOARD ── */
@@ -1659,16 +1528,9 @@
       <div id="lists-list"></div>
       <div class="sidebar-divider"></div>
     </div>
-    <div class="sidebar-view-toggle">
-      <div class="view-toggle">
-        <button class="view-btn active" id="view-btn-artists"  onclick="setListView('artists')">Artists</button>
-        <button class="view-btn"        id="view-btn-contacts" onclick="setListView('contacts')">Contacts</button>
-      </div>
-    </div>
-    <div class="sidebar-section">Labels</div>
+<div class="sidebar-section">Labels</div>
     <div id="label-list"></div>
-    <div id="contacts-label-nav"></div>
-    <div class="sidebar-footer">
+<div class="sidebar-footer">
       <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="openArtistModal()">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
         Add Artist
@@ -1693,7 +1555,6 @@
       </div>
     </div>
     <div id="artist-cards"></div>
-    <div id="contacts-view"></div>
   </main>
 
   <!-- DETAIL PANEL -->
@@ -2181,13 +2042,9 @@ const SAMPLE_DATA = [
 let artists = [];
 let contacts = [];
 let selectedId = null;
-let contactsSearchQuery = '';
-let contactsSortMode = 'name';
-let contactsActiveLabel = 'all';
 let activeLabel = 'all';
 let searchQuery = '';
 let sortMode = 'name';
-let listView = 'artists';
 let customOrder = [];
 let dragSrcId = null;
 let confirmCallback = null;
@@ -2431,148 +2288,16 @@ function getLabels() {
   return Object.entries(map).sort((a,b) => b[1]-a[1]);
 }
 
-// ═══════════════════════════════════════════
-function renderContactsView() {
-  const el = document.getElementById('contacts-view');
-  if (!el) return;
-
-  // Build label nav
-  const labelCounts = {};
-  contacts.forEach(c => { if (c.label) labelCounts[c.label] = (labelCounts[c.label] || 0) + 1; });
-  const labelNames = Object.keys(labelCounts).sort((a, b) => a.localeCompare(b));
-  const navEl = document.getElementById('contacts-label-nav');
-  if (navEl) {
-    navEl.innerHTML = [
-      `<div class="label-item ${contactsActiveLabel==='all'?'active':''}" onclick="contactsActiveLabel='all';renderContactsView()">
-        <span class="label-dot" style="background:var(--text-dim)"></span>
-        <span class="label-name">All Contacts</span>
-        <span class="label-count">${contacts.length}</span>
-      </div>`,
-      ...labelNames.map(label => {
-        const st = getLabelStyle(label);
-        const active = contactsActiveLabel === label;
-        return `<div class="label-item ${active?'active':''}" onclick="contactsActiveLabel=${JSON.stringify(label)};renderContactsView()">
-          <span class="label-dot" style="background:${st.dot}"></span>
-          <span class="label-name">${h(label)}</span>
-          <span class="label-count">${labelCounts[label]}</span>
-        </div>`;
-      })
-    ].join('');
-  }
-
-  const q = contactsSearchQuery.toLowerCase();
-  let filtered = contacts.filter(c => {
-    if (contactsActiveLabel !== 'all' && c.label !== contactsActiveLabel) return false;
-    if (!q) return true;
-    return c.name.toLowerCase().includes(q) ||
-      (c.role  || '').toLowerCase().includes(q) ||
-      (c.email || '').toLowerCase().includes(q) ||
-      (c.label || '').toLowerCase().includes(q) ||
-      (c.notes || '').toLowerCase().includes(q) ||
-      (c.artist_ids || []).map(id => artists.find(a => a.id === id)?.name || '').join(' ').toLowerCase().includes(q);
-  });
-
-  if (contactsSortMode === 'label') {
-    filtered.sort((a, b) => (a.label || '').localeCompare(b.label || '') || a.name.localeCompare(b.name));
-  } else if (contactsSortMode === 'role') {
-    filtered.sort((a, b) => (a.role || '').localeCompare(b.role || '') || a.name.localeCompare(b.name));
-  } else {
-    filtered.sort((a, b) => a.name.localeCompare(b.name));
-  }
-
-  const cards = filtered.length === 0
-    ? `<div class="cb-empty"><span style="font-size:24px;opacity:.2">◈</span><span>${contacts.length === 0 ? 'No contacts yet — scan artists or add one.' : 'No contacts match your search.'}</span></div>`
-    : filtered.map(c => {
-        const st = getLabelStyle(c.label);
-        const av = (c.name || '?')[0].toUpperCase();
-        const viaNames = (c.artist_ids || [])
-          .map(id => artists.find(a => a.id === id)?.name)
-          .filter(Boolean).join(', ');
-        const r2 = parseInt(st.dot.slice(1,3),16), g2 = parseInt(st.dot.slice(3,5),16), b2 = parseInt(st.dot.slice(5,7),16);
-        const avStyle = `background:rgba(${r2},${g2},${b2},0.18);color:${st.dot};border-color:rgba(${r2},${g2},${b2},0.3)`;
-        const hasDetails = c.role || c.email || c.phone || c.social || c.notes || viaNames;
-        return `
-          <div class="cb-card" style="border-left-color:${st.dot}">
-            <div class="cb-card-top">
-              <div class="cb-avatar" style="${avStyle}">${av}</div>
-              <div class="cb-info">
-                <div class="cb-name">${h(c.name)}</div>
-                ${c.label ? `<div class="cb-company">${h(c.label)}</div>` : ''}
-              </div>
-              ${hasDetails ? `<span class="cb-chevron">${icon('ChevronRight', 12)}</span>` : ''}
-              <div class="cb-actions">
-                <button class="icon-btn sm" data-action="edit-contact" data-contact-id="${h(c.id)}">${iconEdit()}</button>
-                <button class="icon-btn sm danger" data-action="delete-contact" data-contact-id="${h(c.id)}">${iconTrash()}</button>
-              </div>
-            </div>
-            ${hasDetails ? `
-            <div class="cb-details">
-              ${c.role ? `<div class="cb-detail-row"><span class="cb-detail-role">${h(c.role)}</span></div>` : ''}
-              ${viaNames ? `<div class="cb-detail-row"><span class="cb-detail-via">via ${h(viaNames)}</span></div>` : ''}
-              ${c.email ? `<div class="cb-detail-row">${iconMail()}<a href="mailto:${h(c.email)}">${h(c.email)}</a><button class="cb-copy" data-action="copy" data-value="${h(c.email)}">copy</button></div>` : ''}
-              ${c.phone ? `<div class="cb-detail-row">${iconPhone()}<span>${h(c.phone)}</span><button class="cb-copy" data-action="copy" data-value="${h(c.phone)}">copy</button></div>` : ''}
-              ${c.social ? `<div class="cb-detail-row">${iconAt()}<span>${h(c.social)}</span><button class="cb-copy" data-action="copy" data-value="${h(c.social)}">copy</button></div>` : ''}
-              ${c.notes ? `<div class="cb-detail-notes">${h(c.notes)}</div>` : ''}
-            </div>` : ''}
-          </div>`;
-      }).join('');
-
-  el.innerHTML = `
-    <div class="cb-topbar">
-      <input type="search" class="cb-search" placeholder="Search contacts…" value="${h(contactsSearchQuery)}" oninput="contactsSearchQuery=this.value;renderContactsView()">
-      <span class="cb-count">${filtered.length}${q ? ` of ${contacts.length}` : ''} contact${contacts.length!==1?'s':''}</span>
-      <div class="cb-sort">
-        <button class="sort-btn ${contactsSortMode==='name'?'active':''}"  onclick="contactsSortMode='name';renderContactsView()">A–Z</button>
-        <button class="sort-btn ${contactsSortMode==='label'?'active':''}" onclick="contactsSortMode='label';renderContactsView()">Label</button>
-        <button class="sort-btn ${contactsSortMode==='role'?'active':''}"  onclick="contactsSortMode='role';renderContactsView()">Role</button>
-      </div>
-    </div>
-    <div class="cb-list">
-      ${cards}
-      <button class="add-contact-btn" data-action="add-contact" data-label="">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-        Add Contact
-      </button>
-    </div>`;
-}
-
-function updateContactArtistSection(labelName) {
-  const labelArtists = labelName
-    ? artists.filter(a => a.label === labelName && !a._scanning)
-    : [];
-  const section = document.getElementById('contact-artists-section');
-  const list    = document.getElementById('contact-artists-list');
-  if (!section || !list) return;
-  if (labelArtists.length > 0) {
-    section.style.display = '';
-    list.innerHTML = labelArtists.map(a =>
-      `<label class="contact-artist-check"><input type="checkbox" name="contact-artist-id" value="${h(a.id)}"> ${h(a.name)}</label>`
-    ).join('');
-  } else {
-    section.style.display = 'none';
-    list.innerHTML = '';
-  }
-}
 
 // RENDER
 // ═══════════════════════════════════════════
 function render() {
   renderSidebar();
-  if (listView === 'contacts') renderContactsView();
-  else { renderList(); renderDetail(); }
+  renderList();
+  renderDetail();
   updateDatalist();
 }
 
-function setListView(view) {
-  listView = view;
-  document.getElementById('view-btn-artists')?.classList.toggle('active', view === 'artists');
-  document.getElementById('view-btn-contacts')?.classList.toggle('active', view === 'contacts');
-  document.getElementById('artist-count').textContent = '';
-  const app = document.querySelector('.app');
-  app.classList.toggle('view-contacts', view === 'contacts');
-  if (view === 'contacts') { contactsSearchQuery = ''; contactsActiveLabel = 'all'; }
-  render();
-}
 
 function renderSidebar() {
   const labels = getLabels();
@@ -2870,7 +2595,6 @@ function openContactModal({ artistId = null, label = '', contactId = null } = {}
   }
 
   document.getElementById('contact-label').value = resolvedLabel;
-  updateContactArtistSection(resolvedLabel);
 
   if (contactId) {
     const c = contacts.find(x => x.id === contactId);
@@ -2882,7 +2606,6 @@ function openContactModal({ artistId = null, label = '', contactId = null } = {}
     document.getElementById('contact-social').value = c.social || '';
     document.getElementById('contact-notes').value = c.notes || '';
     const ids = c.artist_ids || [];
-    // Re-check boxes that were just injected by updateContactArtistSection
     document.querySelectorAll('input[name="contact-artist-id"]').forEach(cb => {
       cb.checked = ids.includes(cb.value);
     });
@@ -3292,9 +3015,6 @@ function iconScan()  { return icon('Search', 11); }
 // EVENTS — delegated click handler for all dynamic UI
 // ═══════════════════════════════════════════
 document.addEventListener('click', e => {
-  const card = e.target.closest('.cb-card');
-  if (card && !e.target.closest('button')) card.classList.toggle('expanded');
-
   const el = e.target.closest('[data-action]');
   if (!el) return;
   const {action} = el.dataset;
@@ -3432,7 +3152,7 @@ async function doSignOut() {
   if (window.kc?.unsubscribeFromContacts) window.kc.unsubscribeFromContacts();
   try { await window.kc.signOut(); } catch {}
   currentUser = null; currentListId = null; currentListRole = null; lists = [];
-  artists = []; contacts = []; contactsActiveLabel = 'all';
+  artists = []; contacts = [];
   document.getElementById('user-chip').style.display = 'none';
   document.getElementById('header-settings-btn').style.display = 'none';
   document.getElementById('share-list-btn').style.display = 'none';
@@ -3576,7 +3296,7 @@ async function saveListName() {
 function showDashboard() {
   if (window.kc?.unsubscribeFromList) window.kc.unsubscribeFromList();
   if (window.kc?.unsubscribeFromContacts) window.kc.unsubscribeFromContacts();
-  artists = []; contacts = []; contactsActiveLabel = 'all';
+  artists = []; contacts = [];
   document.getElementById('dashboard-overlay').classList.remove('hidden');
   document.getElementById('back-to-lists-btn').style.display = 'none';
   document.getElementById('share-list-btn').style.display = 'none';
@@ -3655,19 +3375,15 @@ async function openList(listId, role) {
   document.getElementById('dashboard-overlay').classList.add('hidden');
   document.getElementById('back-to-lists-btn').style.display = '';
   document.getElementById('share-list-btn').style.display = role === 'owner' ? '' : 'none';
-  artists = []; contacts = []; contactsActiveLabel = 'all';
+  artists = []; contacts = [];
   currentListId   = listId;
   currentListRole = role;
   currentListName = lists.find(l => l.id === listId)?.name || '';
   selectedId = null;
   activeLabel = 'all';
   searchQuery = '';
-  listView = 'artists';
   sortMode = loadSortMode();
   customOrder = loadCustomOrder();
-  document.querySelector('.app').classList.remove('view-contacts');
-  document.getElementById('view-btn-artists')?.classList.add('active');
-  document.getElementById('view-btn-contacts')?.classList.remove('active');
   document.getElementById('search').value = '';
   document.querySelectorAll('.sort-btn').forEach(b => b.classList.toggle('active', b.dataset.sort === sortMode));
   document.body.classList.toggle('role-viewer', role === 'viewer');
