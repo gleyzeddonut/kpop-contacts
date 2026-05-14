@@ -281,24 +281,6 @@
     flex-shrink: 0;
   }
 
-  .list-filter-wrap {
-    padding: 6px 6px 4px;
-    flex-shrink: 0;
-  }
-  .list-filter-input {
-    width: 100%;
-    box-sizing: border-box;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--r-sm);
-    color: var(--text);
-    font-family: var(--font-sans);
-    font-size: 10px;
-    padding: 5px 8px;
-    outline: none;
-  }
-  .list-filter-input::placeholder { color: var(--text-dim); }
-  .list-filter-input:focus { border-color: var(--accent); }
 
 
   /* ── DETAIL PANEL ── */
@@ -1404,55 +1386,6 @@
   .dash-settings-btn:hover { color: var(--text); border-color: var(--border-light); }
 
   /* ── LIST TITLE (editable document title at top of center column) ── */
-  .list-title-section {
-    padding: 18px 16px 2px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .list-title-display {
-    font-size: 21px;
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    color: var(--text);
-    font-family: var(--font-display);
-    cursor: text;
-    border-bottom: 1px solid transparent;
-    transition: border-color 0.18s;
-    padding-bottom: 1px;
-    line-height: 1.2;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-  }
-  .list-title-display:hover {
-    border-bottom-color: var(--border-light);
-  }
-  .list-title-edit-icon {
-    flex-shrink: 0;
-    color: var(--text-dim);
-    opacity: 0;
-    transition: opacity 0.15s;
-    pointer-events: none;
-  }
-  .list-title-section:hover .list-title-edit-icon { opacity: 1; }
-  .list-title-input {
-    font-size: 21px;
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    color: var(--text);
-    font-family: var(--font-display);
-    background: transparent;
-    border: none;
-    border-bottom: 2px solid var(--accent);
-    border-radius: 0;
-    padding: 0 0 1px;
-    outline: none;
-    flex: 1;
-    min-width: 0;
-    display: none;
-  }
 
   /* ── LIST LOADING ── */
   .list-loading {
@@ -1559,14 +1492,6 @@
 
   <!-- ARTIST LIST -->
   <main class="artist-list">
-    <div class="list-title-section" id="list-title-section" style="display:none">
-      <span class="list-title-display" id="list-title-display" onclick="startEditListName()" title="Click to rename"></span>
-      <svg class="list-title-edit-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
-      <input type="text" class="list-title-input" id="list-title-input" onblur="saveListName()" onkeydown="listTitleKeydown(event)">
-    </div>
-    <div class="list-filter-wrap">
-      <input class="list-filter-input" id="list-filter-input" type="text" placeholder="Filter artists…" oninput="setListFilter(this.value)">
-    </div>
     <div id="artist-cards"></div>
   </main>
 
@@ -1987,7 +1912,6 @@ let contacts = [];
 let selectedId = null;
 let activeLabel = 'all';
 let searchQuery = '';
-let listSearchQuery = '';
 let sortMode = 'name';
 let customOrder = [];
 let dragSrcId = null;
@@ -2165,10 +2089,6 @@ function setSortMode(mode) {
   render();
 }
 
-function setListFilter(val) {
-  listSearchQuery = val;
-  renderList();
-}
 
 function getSorted(list) {
   const scanning = list.filter(a => a._scanning);
@@ -2229,10 +2149,6 @@ function getFiltered() {
   const filtered = artists.filter(a => {
     if (a._scanning) return true;
     if (activeLabel !== 'all' && a.label !== activeLabel) return false;
-    if (listSearchQuery) {
-      const lq = listSearchQuery.toLowerCase();
-      if (!a.name.toLowerCase().includes(lq) && !(a.label||'').toLowerCase().includes(lq)) return false;
-    }
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return a.name.toLowerCase().includes(q)
@@ -2308,7 +2224,7 @@ function renderList() {
     cardsEl.innerHTML = `
       <div class="empty-list">
         <div class="ei">◈</div>
-        <p>${(searchQuery || listSearchQuery) ? 'no results found' : 'no artists yet'}</p>
+        <p>${searchQuery ? 'no results found' : 'no artists yet'}</p>
       </div>`;
     return;
   }
@@ -3238,7 +3154,6 @@ async function doSignOut() {
   document.getElementById('header-settings-btn').style.display = 'none';
   document.getElementById('share-list-btn').style.display = 'none';
   document.getElementById('back-to-lists-btn').style.display = 'none';
-  document.getElementById('list-title-section').style.display = 'none';
   document.getElementById('settings-overlay').classList.remove('open');
   document.getElementById('dashboard-overlay').classList.add('hidden');
   document.getElementById('auth-overlay').classList.remove('hidden');
@@ -3321,57 +3236,13 @@ async function loadLists() {
 
 // ─── LIST TITLE ───
 function setListTitleDisplay(name, role) {
-  const section = document.getElementById('list-title-section');
-  const display = document.getElementById('list-title-display');
-  display.textContent = name;
-  section.style.display = '';
-  // Only owners can rename
-  display.style.cursor = role === 'owner' ? 'text' : 'default';
-  display.onclick = role === 'owner' ? startEditListName : null;
-  document.querySelector('.list-title-edit-icon').style.display = role === 'owner' ? '' : 'none';
+  // Title removed from artist list column — no-op
 }
 
-function startEditListName() {
-  if (currentListRole !== 'owner') return;
-  const display = document.getElementById('list-title-display');
-  const input   = document.getElementById('list-title-input');
-  display.style.display = 'none';
-  input.style.display   = 'block';
-  input.value = currentListName;
-  input.focus();
-  input.select();
-}
-
-function listTitleKeydown(e) {
-  if (e.key === 'Enter')  { e.preventDefault(); document.getElementById('list-title-input').blur(); }
-  if (e.key === 'Escape') { cancelEditListName(); }
-}
-
-function cancelEditListName() {
-  document.getElementById('list-title-display').style.display = '';
-  const input = document.getElementById('list-title-input');
-  input.style.display = 'none';
-  input.value = currentListName;
-}
-
-async function saveListName() {
-  const input = document.getElementById('list-title-input');
-  const name  = input.value.trim();
-  input.style.display = 'none';
-  document.getElementById('list-title-display').style.display = '';
-  if (!name || name === currentListName) return;
-  try {
-    await window.kc.renameList(currentListId, name);
-    currentListName = name;
-    const list = lists.find(l => l.id === currentListId);
-    if (list) list.name = name;
-    document.getElementById('list-title-display').textContent = name;
-    toast('List renamed');
-  } catch (err) {
-    document.getElementById('list-title-display').textContent = currentListName;
-    toast('Rename failed: ' + err.message, true);
-  }
-}
+function startEditListName() {}
+function listTitleKeydown(e) {}
+function cancelEditListName() {}
+async function saveListName() {}
 
 // ─── DASHBOARD ───
 function showDashboard() {
@@ -3381,7 +3252,6 @@ function showDashboard() {
   document.getElementById('dashboard-overlay').classList.remove('hidden');
   document.getElementById('back-to-lists-btn').style.display = 'none';
   document.getElementById('share-list-btn').style.display = 'none';
-  document.getElementById('list-title-section').style.display = 'none';
   selectedId = null;
   currentListId = null;
   currentListRole = null;
@@ -3463,12 +3333,9 @@ async function openList(listId, role) {
   selectedId = null;
   activeLabel = 'all';
   searchQuery = '';
-  listSearchQuery = '';
   sortMode = loadSortMode();
   customOrder = loadCustomOrder();
   document.getElementById('search').value = '';
-  const lfi = document.getElementById('list-filter-input');
-  if (lfi) lfi.value = '';
   document.body.classList.toggle('role-viewer', role === 'viewer');
 
   setListTitleDisplay(currentListName, role);
