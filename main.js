@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, Menu, ipcMain, dialog } = require('electron')
+const { app, BrowserWindow, shell, Menu, ipcMain, dialog, safeStorage } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const db = require('./db')
@@ -96,6 +96,41 @@ async function callClaude(body) {
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
     throw new Error(err.error?.message || `Proxy error ${res.status}`)
+  }
+  return res.json()
+}
+
+// ── Anthropic API key (stored encrypted, used for PDF parsing) ──
+let apiKeyFile = null
+app.whenReady().then(() => { apiKeyFile = path.join(app.getPath('userData'), 'api-key.bin') })
+
+function getStoredApiKey() {
+  try {
+    if (!apiKeyFile) return null
+    const buf = fs.readFileSync(apiKeyFile)
+    return safeStorage.decryptString(buf) || null
+  } catch { return null }
+}
+
+function storeApiKey(key) {
+  if (!apiKeyFile) return
+  if (!key) { try { fs.unlinkSync(apiKeyFile) } catch {} return }
+  fs.writeFileSync(apiKeyFile, safeStorage.encryptString(key))
+}
+
+async function callClaudeDirect(body, apiKey) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error?.message || `Anthropic error ${res.status}`)
   }
   return res.json()
 }
@@ -284,24 +319,29 @@ Rules:
 - references: YouTube/music URLs with their track title. Empty array if "No specific references provided".
 Return ONLY the JSON object. No markdown, no code fences, no explanation.`
 
-  const data = await callClaude({
+  const apiKey = getStoredApiKey()
+  briefProgress(apiKey ? 'Calling Anthropic directly…' : 'Calling via proxy…')
+  const data = await (apiKey ? callClaudeDirect({
     model: 'claude-sonnet-4-6',
     max_tokens: 4096,
     messages: [{
       role: 'user',
       content: [
-        {
-          type: 'document',
-          source: {
-            type: 'base64',
-            media_type: 'application/pdf',
-            data: base64,
-          },
-        },
+        { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
         { type: 'text', text: prompt },
       ],
     }],
-  })
+  }, apiKey) : callClaude({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 4096,
+    messages: [{
+      role: 'user',
+      content: [
+        { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
+        { type: 'text', text: prompt },
+      ],
+    }],
+  }))
 
   briefProgress('Claude responded — parsing JSON…')
   console.log('[brief] raw response content blocks:', JSON.stringify(data.content?.map(b => ({ type: b.type, len: b.text?.length }))))
@@ -325,8 +365,8 @@ Return ONLY the JSON object. No markdown, no code fences, no explanation.`
 // ── IPC handlers ──
 
 // Config (API key + Supabase credentials)
-ipcMain.handle('get-config', () => ({}))
-ipcMain.handle('set-config', () => true)
+ipcMain.handle('get-config', () => ({ anthropicApiKey: getStoredApiKey() || '' }))
+ipcMain.handle('set-config', (_, cfg) => { if ('anthropicApiKey' in cfg) storeApiKey(cfg.anthropicApiKey); return true })
 
 // AI scan
 ipcMain.handle('scan-contacts', async (_, { artistName, label }) => {

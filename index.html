@@ -3695,7 +3695,7 @@ async function onSignedIn(user) {
   // Register realtime listeners once (survives list switches)
   if (window.kc.onArtistChange) window.kc.onArtistChange(handleRealtimeChange);
   if (window.kc.onContactChange) window.kc.onContactChange(handleContactRealtimeChange);
-  if (window.kc.onBriefProgress) window.kc.onBriefProgress(msg => toast(msg));
+  if (window.kc.onBriefProgress) window.kc.onBriefProgress(msg => console.log('[brief]', msg));
 
   // Register deep link listener once
   if (window.kc.onDeepLink) window.kc.onDeepLink(handleShareToken);
@@ -3971,10 +3971,21 @@ async function handleShareToken(token) {
 // ═══════════════════════════════════════════
 let settingsPanel = 'account';
 
-function openSettings() {
+async function saveAnthropicKey() {
+  const key = document.getElementById('anthropic-key-input')?.value?.trim() || '';
+  const cfg = await window.kc.getConfig();
+  await window.kc.setConfig({ ...cfg, anthropicApiKey: key });
+  toast(key ? 'API key saved' : 'API key cleared');
+}
+
+async function openSettings() {
   document.getElementById('user-chip').classList.remove('open');
   renderSettingsPanel();
   document.getElementById('settings-overlay').classList.add('open');
+  // Pre-fill key field
+  const cfg = await window.kc.getConfig().catch(() => ({}));
+  const input = document.getElementById('anthropic-key-input');
+  if (input && cfg.anthropicApiKey) input.value = cfg.anthropicApiKey;
 }
 
 function closeSettings() {
@@ -4010,6 +4021,17 @@ function renderSettingsPanel() {
             <div class="settings-row-desc">We'll send a reset link to your email address</div>
           </div>
           <button class="btn btn-ghost" style="font-size:11px;padding:5px 14px;flex-shrink:0" onclick="sendPasswordReset()">Send Reset Email</button>
+        </div>
+      </div>
+
+      <div class="settings-group" id="anthropic-key-group">
+        <div class="settings-group-label">Anthropic API Key</div>
+        <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:8px">
+          <div class="settings-row-desc">Required for Brief PDF import. PDFs are sent directly to Anthropic — not through the proxy. Get a key at <a href="#" onclick="event.preventDefault();window.open('https://console.anthropic.com')" style="color:var(--accent)">console.anthropic.com</a>.</div>
+          <div style="display:flex;gap:8px;width:100%">
+            <input type="password" id="anthropic-key-input" placeholder="sk-ant-…" style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:6px 10px;font-size:11px;font-family:var(--font-mono);color:var(--text);outline:none">
+            <button class="btn btn-ghost" style="font-size:11px;padding:5px 14px;flex-shrink:0" onclick="saveAnthropicKey()">Save</button>
+          </div>
         </div>
       </div>
 
