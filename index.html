@@ -70,8 +70,6 @@
     opacity: 0;
     transition: opacity 0.15s;
   }
-  .col-resize-handle:hover::after,
-  .col-resize-handle.dragging::after { opacity: 0.4; }
 
   /* ── HEADER ── */
   header {
@@ -3167,18 +3165,7 @@ async function autoCreateArtistFromBrief(rawName, label) {
   return newArtist;
 }
 
-async function importBriefPdf() {
-  if (!currentListId) { toast('Open a list first', true); return; }
-  toast('Importing brief PDF…');
-  let parsed;
-  try {
-    parsed = await window.kc.importBriefPdf();
-  } catch (err) {
-    toast('Import failed: ' + err.message, true);
-    return;
-  }
-  if (!parsed) return;
-
+async function _processParsedBrief(parsed) {
   const { label, submission_emails: submissionEmails, artists: briefArtists, _sourcePdf } = parsed;
   if (!Array.isArray(briefArtists) || briefArtists.length === 0) {
     toast('No artist briefs found in this PDF', true);
@@ -3196,9 +3183,7 @@ async function importBriefPdf() {
   for (const ba of briefArtists) {
     try {
       let artist = matchArtistByName(ba.name);
-      if (!artist) {
-        artist = await autoCreateArtistFromBrief(ba.name, label);
-      }
+      if (!artist) artist = await autoCreateArtistFromBrief(ba.name, label);
 
       const brief = {
         id: uid(),
@@ -3229,6 +3214,20 @@ async function importBriefPdf() {
       : '';
     toast(`Brief imported: ${importedCount} artist${importedCount !== 1 ? 's' : ''}${contactNote}`);
   }
+}
+
+async function importBriefPdf() {
+  if (!currentListId) { toast('Open a list first', true); return; }
+  toast('Importing brief PDF…');
+  let parsed;
+  try {
+    parsed = await window.kc.importBriefPdf();
+  } catch (err) {
+    toast('Import failed: ' + err.message, true);
+    return;
+  }
+  if (!parsed) return;
+  await _processParsedBrief(parsed);
 }
 
 function artistExists(name) {
@@ -3399,6 +3398,30 @@ function iconMail()  { return icon('Mail', 12); }
 function iconPhone() { return icon('Phone', 12); }
 function iconAt()    { return icon('AtSign', 12); }
 function iconScan()  { return icon('Search', 11); }
+
+// ── PDF drag-and-drop ──
+document.addEventListener('dragover', e => {
+  if ([...e.dataTransfer.items].some(i => i.type === 'application/pdf')) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  }
+});
+document.addEventListener('drop', async e => {
+  const file = [...e.dataTransfer.files].find(f => f.type === 'application/pdf' || f.name.endsWith('.pdf'));
+  if (!file) return;
+  e.preventDefault();
+  if (!currentListId) { toast('Open a list first', true); return; }
+  toast('Importing brief PDF…');
+  let parsed;
+  try {
+    parsed = await window.kc.importBriefPdfFromPath(file.path);
+  } catch (err) {
+    toast('Import failed: ' + err.message, true);
+    return;
+  }
+  if (!parsed) return;
+  await _processParsedBrief(parsed);
+});
 
 // ═══════════════════════════════════════════
 // EVENTS — delegated click handler for all dynamic UI

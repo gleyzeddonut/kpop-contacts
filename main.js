@@ -338,6 +338,14 @@ ipcMain.handle('briefs:import', async () => {
   return parsed
 })
 
+ipcMain.handle('briefs:importFromPath', async (_, { filePath }) => {
+  const stat = fs.statSync(filePath)
+  if (stat.size > 10 * 1024 * 1024) throw new Error('PDF too large (max 10MB)')
+  const parsed = await parseBriefPdf(filePath)
+  parsed._sourcePdf = path.basename(filePath)
+  return parsed
+})
+
 ipcMain.handle('briefs:getAll',  (_, { listId })          => db.getBriefs(listId))
 ipcMain.handle('briefs:upsert',  (_, { listId, brief })   => db.upsertBrief(listId, brief))
 ipcMain.handle('briefs:delete',  (_, { briefId })         => db.deleteBrief(briefId))
