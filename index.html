@@ -46,10 +46,32 @@
     grid-template-columns: 148px 185px 1fr;
     height: 100vh;
     overflow: hidden;
+    position: relative;
     grid-template-areas:
       "header header header"
       "sidebar list detail";
   }
+
+  .col-resize-handle {
+    position: absolute;
+    top: 54px;
+    bottom: 0;
+    width: 8px;
+    margin-left: -4px;
+    cursor: col-resize;
+    z-index: 50;
+  }
+  .col-resize-handle::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 3px; width: 1px;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .col-resize-handle:hover::after,
+  .col-resize-handle.dragging::after { opacity: 0.4; }
 
   /* ── HEADER ── */
   header {
@@ -1492,6 +1514,9 @@
     </div>
     <div id="detail-content" style="display:none"></div>
   </div>
+
+  <div class="col-resize-handle" id="col-resize-1"></div>
+  <div class="col-resize-handle" id="col-resize-2"></div>
 
 </div>
 
@@ -3725,6 +3750,65 @@ async function initApp() {
 }
 
 initApp();
+
+// ═══════════════════════════════════════════
+// COLUMN RESIZER
+// ═══════════════════════════════════════════
+(function() {
+  const STORAGE_KEY = 'kpc-col-widths-v1';
+  const MIN = { sidebar: 80, list: 100 };
+  const DEFAULT = { sidebar: 148, list: 185 };
+
+  let widths = DEFAULT;
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (saved && saved.sidebar > 0 && saved.list > 0) widths = saved;
+  } catch(e) {}
+
+  const app = document.querySelector('.app');
+  const h1 = document.getElementById('col-resize-1');
+  const h2 = document.getElementById('col-resize-2');
+
+  function apply() {
+    app.style.gridTemplateColumns = `${widths.sidebar}px ${widths.list}px 1fr`;
+    h1.style.left = widths.sidebar + 'px';
+    h2.style.left = (widths.sidebar + widths.list) + 'px';
+  }
+
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(widths));
+  }
+
+  function makeResizer(handle, colKey) {
+    handle.addEventListener('mousedown', e => {
+      e.preventDefault();
+      const startX = e.clientX;
+      const startW = widths[colKey];
+      handle.classList.add('dragging');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+
+      function onMove(e) {
+        widths[colKey] = Math.max(MIN[colKey], startW + (e.clientX - startX));
+        apply();
+      }
+      function onUp() {
+        handle.classList.remove('dragging');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        save();
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  }
+
+  makeResizer(h1, 'sidebar');
+  makeResizer(h2, 'list');
+  apply();
+})();
 </script>
 </body>
 </html>
