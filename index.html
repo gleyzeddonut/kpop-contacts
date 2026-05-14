@@ -428,6 +428,13 @@
   .ws-pill.reached_out { background: #0d2018; color: #30D158; border-color: #1a4030; }
   .ws-pill.in_convo { background: #2a1a0a; color: #FF9500; border-color: #4a3010; }
   .ws-pill.placed { background: #1a0d20; color: #BF5AF2; border-color: #3a1a50; }
+  .ws-pill.cold, .ws-pill.reached_out, .ws-pill.in_convo, .ws-pill.placed {
+    opacity: 0.65;
+  }
+  .ws-pill.cold.active, .ws-pill.reached_out.active, .ws-pill.in_convo.active,
+  .ws-pill.placed.active {
+    opacity: 1;
+  }
   .ws-pill.active { opacity: 1; }
 
   /* Contact table */
@@ -3208,6 +3215,13 @@ document.addEventListener('click', e => {
   else if (action === 'delete-contact') confirmDelete('contact', el.dataset.contactId);
   else if (action === 'add-contact')    openContactModal({ artistId: el.dataset.id || null, label: el.dataset.label || '' });
   else if (action === 'copy')           copyText(el.dataset.value);
+  if (action === 'select-contact') {
+    const contactId = e.target.closest('[data-action]').dataset.contactId;
+    if (contactId) {
+      selectedContactId = selectedContactId === contactId ? null : contactId;
+      renderDetail();
+    }
+  }
   if (action === 'open-notes') {
     const contactId = e.target.closest('[data-action]').dataset.contactId;
     if (contactId) {
