@@ -140,7 +140,7 @@
     grid-area: sidebar;
     min-height: 0;
     border-right: 1px solid var(--border);
-    background: var(--surface);
+    background: var(--bg);
     overflow: hidden;
     padding: 14px 0 0;
     display: flex;
@@ -2185,12 +2185,14 @@ function renderSidebar() {
       <span class="label-name">All Artists</span>
       <span class="label-count">${artists.length}</span>
     </div>
-    ${labels.map(([lbl,cnt]) => `
+    ${labels.map(([lbl,cnt]) => {
+      const display = lbl.replace(/\bEntertainment\b/gi, 'Ent.');
+      return `
       <div class="label-item ${activeLabel===lbl?'active':''}" data-action="filter" data-label="${h(lbl)}">
-        <span class="label-name">${h(lbl)}</span>
+        <span class="label-name">${h(display)}</span>
         <span class="label-count">${cnt}</span>
-      </div>`
-    ).join('')}
+      </div>`;
+    }).join('')}
   `;
 }
 
