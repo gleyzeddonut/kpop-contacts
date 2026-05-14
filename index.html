@@ -302,95 +302,12 @@
     user-select: none;
   }
   #artist-cards.sort-custom .drag-handle { display: flex; }
-  #artist-cards.sort-custom .artist-card { cursor: default; grid-template-columns: 20px 44px 1fr; }
-  .artist-card.drag-over { border-color: var(--accent) !important; }
-  .artist-card.dragging { opacity: 0.35; }
 
   .artist-count {
     font-size: 11px;
     font-family: var(--font-mono);
     color: var(--text-muted);
     letter-spacing: 0.04em;
-  }
-
-  .artist-card {
-    display: grid;
-    grid-template-columns: 44px 1fr;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 36px 12px 14px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--r-md);
-    cursor: pointer;
-    transition: all 0.15s;
-    text-align: left;
-    width: 100%;
-    font-family: var(--font-display);
-    position: relative;
-  }
-  .artist-card:hover {
-    background: var(--card-hover);
-    border-color: var(--border-light);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
-    transform: translateY(-1px);
-  }
-  .artist-card.active {
-    background: var(--card-hover);
-    border-color: var(--accent);
-    box-shadow: 0 4px 20px rgba(255,45,120,0.12);
-  }
-  .artist-card::after {
-    content: "";
-    position: absolute;
-    right: 14px;
-    top: 50%;
-    width: 7px; height: 7px;
-    border-right: 2px solid var(--border-light);
-    border-top: 2px solid var(--border-light);
-    transform: translateY(-50%) rotate(45deg);
-    border-radius: 1px;
-    transition: border-color 0.15s;
-  }
-  .artist-card:hover::after { border-color: var(--text-muted); }
-  .artist-card.active::after { border-color: var(--accent); }
-
-  .artist-avatar {
-    width: 44px;
-    height: 44px;
-    border-radius: var(--r-sm);
-    background: var(--bg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    color: var(--text-muted);
-    flex-shrink: 0;
-    font-family: var(--font-mono);
-    border: 1px solid var(--border);
-  }
-
-  .artist-info { min-width: 0; }
-
-  .artist-name {
-    font-size: 13px;
-    font-weight: 600;
-    font-family: var(--font-display);
-    color: var(--text);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    line-height: 1.2;
-    margin-bottom: 4px;
-  }
-
-  .artist-meta {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    flex-wrap: nowrap;
   }
 
   .label-badge {
@@ -952,13 +869,6 @@
   }
   .toast.show { transform: translateX(-50%) translateY(0); }
 
-  /* ── SCANNING PLACEHOLDER CARD ── */
-  .artist-card.scanning {
-    opacity: 0.6;
-    pointer-events: none;
-    cursor: default;
-    border-style: dashed;
-  }
   .scanning-label {
     display: flex;
     align-items: center;
@@ -2402,13 +2312,24 @@ function renderSidebar() {
   `;
 }
 
+function artistStatusDot(artistId) {
+  const artistContacts = contacts.filter(c =>
+    Array.isArray(c.artist_ids) && c.artist_ids.includes(artistId)
+  );
+  if (artistContacts.some(c => c.status === 'in_convo'))    return '#FF9500';
+  if (artistContacts.some(c => c.status === 'placed'))      return '#BF5AF2';
+  if (artistContacts.some(c => c.status === 'reached_out')) return '#30D158';
+  if (artistContacts.some(c => c.status === 'cold'))        return '#6a8aff';
+  return '#3a3a48'; // no contacts
+}
+
 function renderList() {
   const list = getFiltered();
   document.getElementById('artist-count').textContent =
-    `${list.length} artist${list.length!==1?'s':''}`;
+    `${list.length} artist${list.length !== 1 ? 's' : ''}`;
 
   const cardsEl = document.getElementById('artist-cards');
-  cardsEl.className = sortMode === 'custom' ? 'sort-custom' : '';
+  cardsEl.className = '';
 
   if (!list.length) {
     cardsEl.innerHTML = `
@@ -2419,41 +2340,31 @@ function renderList() {
     return;
   }
 
-  const isCustom = sortMode === 'custom';
   cardsEl.innerHTML = list.map(a => {
     if (a._scanning) return `
-      <div class="artist-card scanning">
-        <div class="artist-avatar" style="opacity:0.35">${initials(a.name)}</div>
-        <div class="artist-info">
-          <div class="artist-name" style="opacity:0.5">${h(a.name)}</div>
-          <div class="artist-meta">
-            <span class="scanning-label">
-              <div class="scan-spinner" style="width:10px;height:10px;border-width:1.5px;flex-shrink:0"></div>
-              scanning
-            </span>
-            <span class="dot-wave"><span>.</span><span>.</span><span>.</span></span>
+      <div class="artist-row">
+        <div class="artist-row-avatar" style="background:#2a2a32;color:#555">…</div>
+        <div class="artist-row-info">
+          <div class="artist-row-name" style="opacity:0.5">${h(a.name)}</div>
+          <div class="artist-row-label">
+            <span class="scan-spinner" style="width:8px;height:8px;border-width:1.5px;display:inline-block;vertical-align:middle;margin-right:4px"></span>scanning
           </div>
         </div>
       </div>`;
+
     const st = getLabelStyle(a.label);
-    const n = contacts.filter(c => Array.isArray(c.artist_ids) && c.artist_ids.includes(a.id)).length;
     const dot = a.label ? st.dot : '#4A4A54';
     const r = parseInt(dot.slice(1,3),16), g = parseInt(dot.slice(3,5),16), b = parseInt(dot.slice(5,7),16);
-    const avatarStyle = `background:rgba(${r},${g},${b},0.18);color:${dot};border-color:rgba(${r},${g},${b},0.3)`;
-    const dragAttrs = isCustom
-      ? `draggable="true" ondragstart="dragStart(event,'${h(a.id)}')" ondragend="dragEnd()" ondragover="dragOver(event,'${h(a.id)}')" ondrop="dragDrop(event,'${h(a.id)}')" data-id="${h(a.id)}"`
-      : `data-id="${h(a.id)}"`;
+    const avatarStyle = `background:rgba(${r},${g},${b},0.2);color:${dot}`;
+    const statusDot = artistStatusDot(a.id);
     return `
-      <button class="artist-card ${selectedId===a.id?'active':''}" data-action="select" ${dragAttrs} style="border-left: 3px solid ${dot}">
-        ${isCustom ? `<span class="drag-handle" onclick="event.stopPropagation()">⠿</span>` : ''}
-        <div class="artist-avatar" style="${avatarStyle}">${initials(a.name)}</div>
-        <div class="artist-info">
-          <div class="artist-name">${h(a.name)}</div>
-          <div class="artist-meta">
-            <span class="label-badge ${st.cls}">${h(a.label)}</span>
-            ${n > 0 ? `<span class="contact-chip">${n} contact${n!==1?'s':''}</span>` : ''}
-          </div>
+      <button class="artist-row ${selectedId === a.id ? 'active' : ''}" data-action="select" data-id="${h(a.id)}">
+        <div class="artist-row-avatar" style="${avatarStyle}">${initials(a.name)}</div>
+        <div class="artist-row-info">
+          <div class="artist-row-name">${h(a.name)}</div>
+          <div class="artist-row-label">${h(a.label || '—')}</div>
         </div>
+        <div class="artist-row-dot" style="background:${statusDot}"></div>
       </button>`;
   }).join('');
 }
