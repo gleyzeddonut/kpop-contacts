@@ -1756,6 +1756,64 @@
 
 <script>
 // ═══════════════════════════════════════════
+// LABEL NORMALIZATION
+// Maps raw label strings (any capitalization/variant) to a canonical display name.
+// Strips parent-company parentheticals so "(HYBE)" never shows in the sidebar.
+// ═══════════════════════════════════════════
+const LABEL_NORMALIZE_MAP = {
+  // HYBE / Big Hit variants
+  'hybe / big hit music': 'Big Hit Music',
+  'hybe/big hit music': 'Big Hit Music',
+  'big hit music': 'Big Hit Music',
+  'big hit': 'Big Hit Music',
+  'bighit music': 'Big Hit Music',
+  'bighit': 'Big Hit Music',
+  // HYBE sub-labels
+  'ador': 'ADOR',
+  'source music': 'Source Music',
+  'belift lab': 'BELIFT LAB',
+  'belift': 'BELIFT LAB',
+  'pledis entertainment': 'Pledis Ent.',
+  'pledis': 'Pledis Ent.',
+  'koz entertainment': 'KOZ Ent.',
+  'koz': 'KOZ Ent.',
+  // SM
+  'sm entertainment': 'SM Ent.',
+  'sm ent': 'SM Ent.',
+  'smtown': 'SM Ent.',
+  'sm label': 'SM Ent.',
+  // YG
+  'yg entertainment': 'YG Ent.',
+  'yg ent': 'YG Ent.',
+  'yg': 'YG Ent.',
+  // JYP
+  'jyp entertainment': 'JYP Ent.',
+  'jyp ent': 'JYP Ent.',
+  'jype': 'JYP Ent.',
+  // Starship
+  'starship entertainment': 'Starship Ent.',
+  'starship ent': 'Starship Ent.',
+  // Cube
+  'cube entertainment': 'Cube Ent.',
+  'cube ent': 'Cube Ent.',
+  // Kakao/Kakao Entertainment
+  'kakao entertainment': 'Kakao Ent.',
+  'kakao ent': 'Kakao Ent.',
+};
+
+function normalizeLabel(label) {
+  if (!label) return '';
+  // Strip trailing parenthetical parent company: "Studio 0 (HYBE)" → "Studio 0"
+  const stripped = label.replace(/\s*\([^)]+\)\s*$/, '').trim();
+  const key = stripped.toLowerCase().replace(/\s+/g, ' ');
+  if (LABEL_NORMALIZE_MAP[key]) return LABEL_NORMALIZE_MAP[key];
+  // Check original (un-stripped) too
+  const origKey = label.toLowerCase().trim().replace(/\s+/g, ' ');
+  if (LABEL_NORMALIZE_MAP[origKey]) return LABEL_NORMALIZE_MAP[origKey];
+  // Fallback: use stripped version, abbreviate Entertainment
+  return stripped.replace(/\bEntertainment\b/gi, 'Ent.');
+}
+
 // LABEL COLOR SYSTEM
 // ═══════════════════════════════════════════
 const LABEL_MAP = [
@@ -2138,7 +2196,7 @@ function dragDrop(e, targetId) {
 function getFiltered() {
   const filtered = artists.filter(a => {
     if (a._scanning) return true;
-    if (activeLabel !== 'all' && a.label !== activeLabel) return false;
+    if (activeLabel !== 'all' && normalizeLabel(a.label) !== activeLabel) return false;
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return a.name.toLowerCase().includes(q)
@@ -2158,7 +2216,12 @@ function getFiltered() {
 
 function getLabels() {
   const map = {};
-  artists.forEach(a => { if (!a._scanning && a.label) map[a.label] = (map[a.label]||0) + 1; });
+  artists.forEach(a => {
+    if (!a._scanning && a.label) {
+      const norm = normalizeLabel(a.label);
+      map[norm] = (map[norm]||0) + 1;
+    }
+  });
   return Object.entries(map).sort((a,b) => b[1]-a[1]);
 }
 
@@ -2180,14 +2243,11 @@ function renderSidebar() {
       <span class="label-name">All Artists</span>
       <span class="label-count">${artists.length}</span>
     </div>
-    ${labels.map(([lbl,cnt]) => {
-      const display = lbl.replace(/\bEntertainment\b/gi, 'Ent.');
-      return `
+    ${labels.map(([lbl,cnt]) => `
       <div class="label-item ${activeLabel===lbl?'active':''}" data-action="filter" data-label="${h(lbl)}">
-        <span class="label-name">${h(display)}</span>
+        <span class="label-name">${h(lbl)}</span>
         <span class="label-count">${cnt}</span>
-      </div>`;
-    }).join('')}
+      </div>`).join('')}
   `;
 }
 
@@ -2241,7 +2301,7 @@ function renderList() {
         <div class="artist-row-avatar" style="${avatarStyle}">${initials(a.name)}</div>
         <div class="artist-row-info">
           <div class="artist-row-name">${h(a.name)}</div>
-          <div class="artist-row-label">${h((a.label || '—').replace(/\bEntertainment\b/gi, 'Ent.'))}</div>
+          <div class="artist-row-label">${h(a.label ? normalizeLabel(a.label) : '—')}</div>
         </div>
         <div class="artist-row-dot" style="background:${statusDot}"></div>
       </button>`;
