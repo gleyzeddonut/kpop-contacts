@@ -230,6 +230,28 @@ async function deleteContact(contactId) {
   if (error) throw error
 }
 
+// ── Briefs ────────────────────────────────────────────────────────────────
+async function getBriefs(listId) {
+  const { data, error } = await client()
+    .from('briefs').select('*').eq('list_id', listId).order('created_at', { ascending: false })
+  if (error) throw error
+  return data || []
+}
+
+async function upsertBrief(listId, brief) {
+  const { list_id, created_at, ...rest } = brief
+  const { error } = await client().from('briefs').upsert(
+    { ...rest, list_id: listId },
+    { onConflict: 'id' }
+  )
+  if (error) throw error
+}
+
+async function deleteBrief(briefId) {
+  const { error } = await client().from('briefs').delete().eq('id', briefId)
+  if (error) throw error
+}
+
 // ── Realtime ──────────────────────────────────────────────────────────────
 let realtimeChannel = null
 let contactsChannel = null
@@ -290,6 +312,7 @@ module.exports = {
   getLists, createList, renameList, deleteList,
   getArtists, upsertArtist, deleteArtistDb,
   getContacts, upsertContact, deleteContact,
+  getBriefs, upsertBrief, deleteBrief,
   getShares, addShare, removeShare,
   createShareToken, getShareTokens, deleteShareToken, resolveShareToken,
   subscribeArtists, unsubscribeArtists,
