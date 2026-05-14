@@ -1970,76 +1970,6 @@
   </div>
 </div>
 
-<!-- MODAL: Contact -->
-<div class="modal-overlay" id="contact-modal" onclick="handleOverlayClick(event,'contact-modal')">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title" id="contact-modal-title">Add Contact</div>
-      <button class="modal-close" onclick="closeModal('contact-modal')">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="contact-id">
-      <div class="form-group">
-        <label>Label</label>
-        <input type="text" id="contact-label" placeholder="e.g. HYBE / Big Hit Music" list="contact-label-datalist" oninput="updateContactArtistSection(this.value)">
-        <datalist id="contact-label-datalist"></datalist>
-      </div>
-      <div id="contact-artists-section" style="display:none">
-        <div class="form-group" style="margin-bottom:12px">
-          <label>Assign to artists</label>
-          <div id="contact-artists-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px"></div>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Name *</label>
-          <input type="text" id="contact-name" placeholder="Full name">
-        </div>
-        <div class="form-group">
-          <label>Role / Title</label>
-          <input type="text" id="contact-role" placeholder="e.g. A&R Manager" list="role-datalist">
-          <datalist id="role-datalist">
-            <option value="A&R Manager">
-            <option value="Senior A&R">
-            <option value="A&R Director">
-            <option value="VP of A&R">
-            <option value="Head of A&R">
-            <option value="A&R Coordinator">
-            <option value="Label Manager">
-            <option value="Artist Manager">
-            <option value="International A&R">
-            <option value="Creative Director">
-            <option value="Music Supervisor">
-            <option value="Publishing Contact">
-            <option value="Sync Licensing">
-          </datalist>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Email</label>
-          <input type="email" id="contact-email" placeholder="email@label.com">
-        </div>
-        <div class="form-group">
-          <label>Phone</label>
-          <input type="tel" id="contact-phone" placeholder="+82-2-…">
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Instagram / Socials</label>
-        <input type="text" id="contact-social" placeholder="@handle">
-      </div>
-      <div class="form-group">
-        <label>Notes</label>
-        <textarea id="contact-notes" placeholder="Best time to reach, submission preferences, how you met…"></textarea>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('contact-modal')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveContact()">Save Contact</button>
-    </div>
-  </div>
-</div>
 
 <!-- CONFIRM DIALOG -->
 <div class="confirm-overlay" id="confirm-overlay">
@@ -2375,10 +2305,17 @@ async function loadListArtists(listId) {
   document.getElementById('artist-cards').innerHTML =
     '<div class="list-loading"><div class="scan-spinner" style="width:18px;height:18px;border-width:2px"></div><p>Loading…</p></div>';
   try {
-    [artists, contacts] = await Promise.all([
+    const [loadedArtists, loadedContacts] = await Promise.all([
       window.kc.getArtists(listId),
       window.kc.getContacts ? window.kc.getContacts(listId) : Promise.resolve([]),
     ]);
+    artists = loadedArtists;
+    contacts = loadedContacts.map(c => ({
+      ...c,
+      status: c.status || 'cold',
+      notes_log: Array.isArray(c.notes_log) ? c.notes_log :
+        (c.notes ? [{ date: new Date().toISOString().slice(0,10), text: c.notes }] : []),
+    }));
     await migrateEmbeddedContacts();
     render();
   } catch (err) {
@@ -2431,6 +2368,8 @@ async function migrateEmbeddedContacts() {
           phone: c.phone || '',
           social: c.social || '',
           notes: c.notes || '',
+          status: 'cold',
+          notes_log: c.notes ? [{ date: new Date().toISOString().slice(0,10), text: c.notes }] : [],
         };
         contacts.push(nc);
         await syncContact(nc);
@@ -2449,7 +2388,12 @@ function loadDataLocal() {
 
   const cs = localStorage.getItem('kpc-contacts-v1');
   if (cs) {
-    contacts = JSON.parse(cs);
+    contacts = (JSON.parse(cs) || []).map(c => ({
+      ...c,
+      status: c.status || 'cold',
+      notes_log: Array.isArray(c.notes_log) ? c.notes_log :
+        (c.notes ? [{ date: new Date().toISOString().slice(0,10), text: c.notes }] : []),
+    }));
   } else {
     // One-time migration of embedded contacts from sample/old data
     contacts = [];
@@ -2468,6 +2412,8 @@ function loadDataLocal() {
           phone: c.phone || '',
           social: c.social || '',
           notes: c.notes || '',
+          status: 'cold',
+          notes_log: c.notes ? [{ date: new Date().toISOString().slice(0,10), text: c.notes }] : [],
         });
       });
     });
@@ -2832,7 +2778,8 @@ function renderNotesPanel(contact) {
 
   panel.innerHTML = `
     <div class="np-header">
-      <div style="display:flex;justify-content:flex-end;margin-bottom:6px">
+      <div style="display:flex;justify-content:flex-end;gap:4px;margin-bottom:6px">
+        <button class="np-close" style="color:#FF5555" data-action="delete-contact" data-contact-id="${h(contact.id)}" title="Delete contact">🗑</button>
         <button class="np-close" onclick="toggleNotesPanel('${h(contact.id)}')">✕</button>
       </div>
       <input class="np-field np-field-name" value="${h(contact.name)}"
@@ -3024,111 +2971,10 @@ function deleteArtist(id) {
 }
 
 // ─── CONTACT CRUD ───
-function updateContactArtistSection(labelVal) {
-  const matchingArtists = artists.filter(a =>
-    a.label && a.label.toLowerCase() === labelVal.toLowerCase()
-  );
-  const section = document.getElementById('contact-artists-section');
-  const listEl = document.getElementById('contact-artists-list');
-  if (!section || !listEl) return;
-  if (matchingArtists.length === 0) {
-    section.style.display = 'none';
-    return;
-  }
-  section.style.display = '';
-  listEl.innerHTML = matchingArtists.map(a => `
-    <label class="contact-artist-check">
-      <input type="checkbox" name="contact-artist-id" value="${h(a.id)}">
-      ${h(a.name)}
-    </label>
-  `).join('');
-}
-
-function openContactModal({ artistId = null, label = '', contactId = null } = {}) {
-  document.getElementById('contact-modal-title').textContent = contactId ? 'Edit Contact' : 'Add Contact';
-
-  // Resolve label: from existing contact when editing, otherwise from caller
-  const existingContact = contactId ? contacts.find(x => x.id === contactId) : null;
-  const resolvedLabel = existingContact?.label
-    || label
-    || (artistId ? artists.find(a => a.id === artistId)?.label : '')
-    || '';
-
-  // Populate label datalist
-  const dl = document.getElementById('contact-label-datalist');
-  if (dl) {
-    const labelNames = [...new Set(artists.filter(a => a.label && !a._scanning).map(a => a.label))].sort();
-    dl.innerHTML = labelNames.map(l => `<option value="${h(l)}">`).join('');
-  }
-
-  document.getElementById('contact-label').value = resolvedLabel;
-
-  if (contactId) {
-    const c = contacts.find(x => x.id === contactId);
-    document.getElementById('contact-id').value = contactId;
-    document.getElementById('contact-name').value = c.name;
-    document.getElementById('contact-role').value = c.role || '';
-    document.getElementById('contact-email').value = c.email || '';
-    document.getElementById('contact-phone').value = c.phone || '';
-    document.getElementById('contact-social').value = c.social || '';
-    document.getElementById('contact-notes').value = c.notes || '';
-    const ids = c.artist_ids || [];
-    document.querySelectorAll('input[name="contact-artist-id"]').forEach(cb => {
-      cb.checked = ids.includes(cb.value);
-    });
-    document.getElementById('contact-label').value = resolvedLabel;
-  } else {
-    document.getElementById('contact-id').value = '';
-    ['contact-name','contact-role','contact-email','contact-phone','contact-social','contact-notes']
-      .forEach(id => document.getElementById(id).value = '');
-    if (artistId) {
-      const cb = document.querySelector(`input[name="contact-artist-id"][value="${artistId}"]`);
-      if (cb) cb.checked = true;
-    }
-  }
-
-  openModal('contact-modal');
-  setTimeout(() => document.getElementById('contact-name').focus(), 120);
-}
-
-function saveContact() {
-  const name = document.getElementById('contact-name').value.trim();
-  if (!name) { toast('Contact name is required', true); return; }
-
-  const contactId = document.getElementById('contact-id').value;
-  const label = document.getElementById('contact-label').value;
-  const artistIds = [...document.querySelectorAll('input[name="contact-artist-id"]:checked')]
-    .map(cb => cb.value);
-
-  const data = {
-    label,
-    artist_ids: artistIds,
-    name,
-    role: document.getElementById('contact-role').value.trim(),
-    email: document.getElementById('contact-email').value.trim(),
-    phone: document.getElementById('contact-phone').value.trim(),
-    social: document.getElementById('contact-social').value.trim(),
-    notes: document.getElementById('contact-notes').value.trim(),
-  };
-
-  let saved;
-  if (contactId) {
-    const idx = contacts.findIndex(c => c.id === contactId);
-    if (idx >= 0) { contacts[idx] = { ...contacts[idx], ...data }; saved = contacts[idx]; }
-  } else {
-    saved = { id: uid(), ...data };
-    contacts.push(saved);
-  }
-
-  closeModal('contact-modal');
-  render();
-  toast(contactId ? 'Contact updated' : 'Contact added');
-  if (saved) syncContact(saved);
-}
-
 function deleteContact(contactId) {
   contacts = contacts.filter(c => c.id !== contactId);
-  render();
+  if (selectedContactId === contactId) selectedContactId = null;
+  renderDetail();
   toast('Contact deleted');
   syncDeleteContact(contactId);
 }
@@ -3164,6 +3010,13 @@ function closeConfirm(ok) {
   document.getElementById('confirm-overlay').classList.remove('open');
   if (ok && confirmCallback) confirmCallback();
   confirmCallback = null;
+}
+
+function showConfirm(message, callback) {
+  document.getElementById('confirm-title').textContent = 'Confirm';
+  document.getElementById('confirm-msg').textContent = message;
+  document.getElementById('confirm-overlay').classList.add('open');
+  confirmCallback = callback;
 }
 
 // ─── PROMPT (replaces window.prompt, blocked in Electron with contextIsolation) ───
@@ -3272,6 +3125,8 @@ async function processScanQueue() {
         phone: c.phone || '',
         social: c.social || '',
         notes: c.notes || '',
+        status: 'cold',
+        notes_log: c.notes ? [{ date: new Date().toISOString().slice(0,10), text: c.notes }] : [],
       }));
       scannedContacts.forEach(c => { contacts.push(c); syncContact(c); });
       selectedId = placeholderId;
@@ -3398,6 +3253,8 @@ async function autoScanContacts(artistId) {
           phone: nc.phone || '',
           social: nc.social || '',
           notes: nc.notes || '',
+          status: 'cold',
+          notes_log: nc.notes ? [{ date: new Date().toISOString().slice(0,10), text: nc.notes }] : [],
         };
         contacts.push(newC);
         syncContact(newC);
@@ -3490,9 +3347,42 @@ document.addEventListener('click', e => {
   else if (action === 'scan-web')       scanWeb(el.dataset.id);
   else if (action === 'edit-artist')    openArtistModal(el.dataset.id);
   else if (action === 'delete-artist')  confirmDelete('artist', el.dataset.id);
-  else if (action === 'edit-contact')   openContactModal({ contactId: el.dataset.contactId, label: el.dataset.label || '' });
-  else if (action === 'delete-contact') confirmDelete('contact', el.dataset.contactId);
-  else if (action === 'add-contact')    openContactModal({ artistId: el.dataset.id || null, label: el.dataset.label || '' });
+  else if (action === 'edit-contact') {
+    const contactId = el.dataset.contactId;
+    if (contactId) {
+      selectedContactId = selectedContactId === contactId ? null : contactId;
+      renderDetail();
+    }
+  }
+  else if (action === 'delete-contact') {
+    const contactId = el.dataset.contactId;
+    if (contactId) showConfirm('Delete this contact?', () => deleteContact(contactId));
+  }
+  else if (action === 'add-contact') {
+    const artistId = el.dataset.id;
+    const label = el.dataset.label || '';
+    const newContact = {
+      id: uid(),
+      list_id: currentListId,
+      label,
+      artist_ids: artistId ? [artistId] : [],
+      name: 'New Contact',
+      role: '',
+      email: '',
+      phone: '',
+      social: '',
+      status: 'cold',
+      notes_log: [],
+    };
+    contacts.push(newContact);
+    selectedContactId = newContact.id;
+    renderDetail();
+    syncContact(newContact);
+    setTimeout(() => {
+      const nameField = document.querySelector('.np-field-name');
+      if (nameField) { nameField.focus(); nameField.select(); }
+    }, 50);
+  }
   else if (action === 'copy')           copyText(el.dataset.value);
   else if (action === 'select-contact') {
     const contactId = el.dataset.contactId;
@@ -3563,7 +3453,6 @@ document.addEventListener('keydown', e => {
         if (document.getElementById('artist-tab-auto').style.display !== 'none') autoFillArtist();
         else saveArtist();
       }
-      if (openModal.id === 'contact-modal') saveContact();
     }
   }
 });
