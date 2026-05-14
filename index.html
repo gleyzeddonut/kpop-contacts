@@ -295,14 +295,6 @@
   }
   .sort-btn.active { background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(255,45,120,0.3); }
   .sort-btn:hover:not(.active) { color: var(--text-muted); background: var(--card-hover); }
-  .drag-handle {
-    display: none; align-items: center; justify-content: center;
-    color: var(--text-dim); cursor: grab; padding-right: 8px;
-    font-size: 16px; flex-shrink: 0; line-height: 1;
-    user-select: none;
-  }
-  #artist-cards.sort-custom .drag-handle { display: flex; }
-
   .artist-count {
     font-size: 11px;
     font-family: var(--font-mono);
@@ -717,74 +709,6 @@
     font-family: var(--font-mono);
     letter-spacing: 0.06em;
   }
-
-  .detail-header {
-    padding: 18px 20px 14px;
-    border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    background: var(--surface);
-    z-index: 5;
-  }
-
-  .detail-header-top {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 8px;
-  }
-  .detail-header-info { flex: 1; min-width: 0; }
-
-  .detail-avatar-lg {
-    width: 48px;
-    height: 48px;
-    border-radius: var(--r-sm);
-    background: var(--bg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--text-muted);
-    font-family: var(--font-mono);
-    border: 1px solid var(--border);
-    flex-shrink: 0;
-  }
-
-  .detail-name {
-    font-size: 18px;
-    font-weight: 700;
-    font-family: var(--font-display);
-    letter-spacing: -0.02em;
-    line-height: 1.15;
-    margin-bottom: 8px;
-  }
-
-  .detail-badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    align-items: center;
-  }
-
-  .genre-tag {
-    padding: 3px 9px;
-    border-radius: var(--r-pill);
-    font-size: 10px;
-    font-weight: 500;
-    background: var(--card);
-    border: 1px solid var(--border);
-    color: var(--text-muted);
-  }
-
-  .detail-actions {
-    display: flex;
-    gap: 6px;
-    margin-top: 13px;
-  }
-
-  .detail-body { padding: 14px 20px 24px; }
 
   .section-label {
     font-size: 10px;
@@ -1482,7 +1406,6 @@
   .role-viewer .btn-primary { display: none !important; }
   .role-viewer .icon-btn.danger { display: none !important; }
   .role-viewer .icon-btn[data-action="edit-artist"] { display: none !important; }
-  .role-viewer .icon-btn[data-action="edit-contact"] { display: none !important; }
   .role-viewer .icon-btn[data-action="add-contact"] { display: none !important; }
   .role-viewer .icon-btn[data-action="scan-web"] { display: none !important; }
   .role-viewer .add-contact-btn { display: none !important; }
@@ -2291,8 +2214,6 @@ let selectedContactId = null; // contact whose notes panel is open
 // ── Scan queue ──
 const scanQueue = [];       // [{placeholderId, name}]
 let scanQueueRunning = false;
-const expandedNotes = new Set();
-
 const GENERIC_EMAIL_PREFIXES = ['info@', 'contact@', 'hello@', 'admin@', 'general@', 'support@', 'inquiry@', 'noreply@'];
 function isProtectedEmail(email) {
   return email.includes('email-protected') || email.includes('[email') || email.includes('cdn-cgi');
@@ -2422,7 +2343,7 @@ function loadDataLocal() {
 }
 function saveDataLocal() {
   localStorage.setItem('kpc-v5', JSON.stringify(artists.filter(a => !a._scanning)));
-  localStorage.setItem('kpc-contacts-v1', JSON.stringify(contacts));
+  localStorage.setItem('kpc-contacts-v1', JSON.stringify(contacts.map(({ notes, ...rest }) => rest)));
 }
 
 // Compat shims used by older code paths (resolved at runtime)
@@ -2739,12 +2660,6 @@ function renderDetail() {
 // ═══════════════════════════════════════════
 // ACTIONS
 // ═══════════════════════════════════════════
-function toggleNotes(artistId) {
-  if (expandedNotes.has(artistId)) expandedNotes.delete(artistId);
-  else expandedNotes.add(artistId);
-  renderDetail();
-}
-
 function toggleNotesPanel(contactId) {
   if (selectedContactId === contactId) {
     selectedContactId = null;
@@ -3011,13 +2926,6 @@ function closeConfirm(ok) {
   document.getElementById('confirm-overlay').classList.remove('open');
   if (ok && confirmCallback) confirmCallback();
   confirmCallback = null;
-}
-
-function showConfirm(message, callback) {
-  document.getElementById('confirm-title').textContent = 'Confirm';
-  document.getElementById('confirm-msg').textContent = message;
-  document.getElementById('confirm-overlay').classList.add('open');
-  confirmCallback = callback;
 }
 
 // ─── PROMPT (replaces window.prompt, blocked in Electron with contextIsolation) ───
@@ -3357,7 +3265,7 @@ document.addEventListener('click', e => {
   }
   else if (action === 'delete-contact') {
     const contactId = el.dataset.contactId;
-    if (contactId) showConfirm('Delete this contact?', () => deleteContact(contactId));
+    if (contactId) confirmDelete('contact', contactId);
   }
   else if (action === 'add-contact') {
     const artistId = el.dataset.id;
