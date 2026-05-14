@@ -2298,10 +2298,9 @@ function renderList() {
       : '';
     return `
       <button class="artist-row ${selectedId === a.id ? 'active' : ''}" data-action="select" data-id="${h(a.id)}" ${dragAttrs}>
-        <div class="artist-row-avatar" style="${avatarStyle}">${initials(a.name)}</div>
+        <div class="artist-row-avatar" style="${avatarStyle}">${initials(a.label ? normalizeLabel(a.label) : a.name)}</div>
         <div class="artist-row-info">
           <div class="artist-row-name">${h(a.name)}</div>
-          <div class="artist-row-label">${h(a.label ? normalizeLabel(a.label) : '—')}</div>
         </div>
         <div class="artist-row-dot" style="background:${statusDot}"></div>
       </button>`;
