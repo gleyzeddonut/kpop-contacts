@@ -352,12 +352,19 @@ Return ONLY the JSON object. No markdown, no code fences, no explanation.`
     .join('')
   if (!text) throw new Error('No response from Claude')
 
-  const match = text.match(/\{[\s\S]*\}/)
+  console.log('[brief] raw text (first 500):', text.slice(0, 500))
+
+  // Strip markdown code fences if present
+  const stripped = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim()
+  const match = stripped.match(/\{[\s\S]*\}/)
   if (!match) throw new Error('Claude did not return a JSON object')
 
   let parsed
   try { parsed = JSON.parse(match[0]) }
-  catch { throw new Error('Claude returned unparseable JSON') }
+  catch (e) {
+    console.log('[brief] JSON parse error:', e.message, '— text:', stripped.slice(0, 300))
+    throw new Error('Claude returned unparseable JSON: ' + e.message)
+  }
   briefProgress(`Parsed: ${parsed.artists?.length ?? 0} artists, label: ${parsed.label}`)
   return parsed
 }
