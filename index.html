@@ -2575,7 +2575,9 @@ function renderDetail() {
 
   const rowsHTML = filtered.length === 0
     ? `<div style="padding:20px 8px;font-size:11px;color:var(--text-dim);font-family:var(--font-mono)">No contacts${wsStatusFilter !== 'all' ? ' with this status' : ' yet'}.</div>`
-    : filtered.map((c, i) => `
+    : filtered.map((c, i) => {
+        const safeStatus = ['cold','reached_out','in_convo','placed'].includes(c.status) ? c.status : 'cold';
+        return `
       <div class="contact-table-row ${selectedContactId===c.id?'selected':''}"
            data-action="select-contact" data-contact-id="${h(c.id)}"
            ondblclick="toggleNotesPanel('${h(c.id)}')">
@@ -2583,12 +2585,13 @@ function renderDetail() {
         <div class="ctr-name">${h(c.name)}</div>
         <div class="ctr-role">${h(c.role||'—')}</div>
         <div class="ctr-email" data-action="copy" data-value="${h(c.email||'')}">${h(c.email||'—')}</div>
-        <div><span class="status-badge ${c.status||'cold'}">${statusLabel(c.status||'cold')}</span></div>
+        <div><span class="status-badge ${safeStatus}">${statusLabel(safeStatus)}</span></div>
         <div class="ctr-actions">
           ${c.email ? `<button class="ctr-btn" data-action="mailto" data-value="${h(c.email)}" title="Email">✉</button>` : ''}
           <button class="ctr-btn" data-action="open-notes" data-contact-id="${h(c.id)}" title="Notes">✎</button>
         </div>
-      </div>`).join('');
+      </div>`;
+      }).join('');
 
   content.innerHTML = `
     <div class="ws-header">
@@ -3215,22 +3218,22 @@ document.addEventListener('click', e => {
   else if (action === 'delete-contact') confirmDelete('contact', el.dataset.contactId);
   else if (action === 'add-contact')    openContactModal({ artistId: el.dataset.id || null, label: el.dataset.label || '' });
   else if (action === 'copy')           copyText(el.dataset.value);
-  if (action === 'select-contact') {
-    const contactId = e.target.closest('[data-action]').dataset.contactId;
+  else if (action === 'select-contact') {
+    const contactId = el.dataset.contactId;
     if (contactId) {
       selectedContactId = selectedContactId === contactId ? null : contactId;
       renderDetail();
     }
   }
-  if (action === 'open-notes') {
-    const contactId = e.target.closest('[data-action]').dataset.contactId;
+  else if (action === 'open-notes') {
+    const contactId = el.dataset.contactId;
     if (contactId) {
       selectedContactId = selectedContactId === contactId ? null : contactId;
       renderDetail();
     }
   }
-  if (action === 'mailto') {
-    const email = e.target.closest('[data-action]').dataset.value;
+  else if (action === 'mailto') {
+    const email = el.dataset.value;
     if (email) window.open(`mailto:${email}`, '_blank');
   }
 });
