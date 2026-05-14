@@ -2868,6 +2868,89 @@ function updateQueueBadge() {
   }
 }
 
+// ── Brief import helpers ──
+function normalizeBriefArtistName(name) {
+  return name.replace(/\s*\(.*?\)\s*$/, '').trim().toLowerCase();
+}
+
+function matchArtistByName(rawName) {
+  const needle = normalizeBriefArtistName(rawName);
+  return artists.find(a => normalizeBriefArtistName(a.name || '') === needle) || null;
+}
+
+async function autoCreateArtistFromBrief(rawName, label) {
+  const name = rawName.replace(/\s*\(.*?\)\s*$/, '').trim();
+  const newArtist = { id: uid(), name, label: label || '', contacts: [] };
+  artists.push(newArtist);
+  render();
+  await syncArtist(newArtist);
+  return newArtist;
+}
+
+async function importBriefPdf() {
+  if (!currentListId) { toast('Open a list first', true); return; }
+  toast('Importing brief PDF…');
+  let parsed;
+  try {
+    parsed = await window.kc.importBriefPdf();
+  } catch (err) {
+    toast('Import failed: ' + err.message, true);
+    return;
+  }
+  if (!parsed) return;
+
+  const { label, submission_emails: submissionEmails, artists: briefArtists, _sourcePdf } = parsed;
+  if (!Array.isArray(briefArtists) || briefArtists.length === 0) {
+    toast('No artist briefs found in this PDF', true);
+    return;
+  }
+
+  const safeEmails = Array.isArray(submissionEmails) ? submissionEmails : [];
+  const matchedContactIds = contacts
+    .filter(c => c.email && safeEmails.some(e => e.toLowerCase() === c.email.toLowerCase()))
+    .map(c => c.id);
+
+  let importedCount = 0;
+  const errors = [];
+
+  for (const ba of briefArtists) {
+    try {
+      let artist = matchArtistByName(ba.name);
+      if (!artist) {
+        artist = await autoCreateArtistFromBrief(ba.name, label);
+      }
+
+      const brief = {
+        id: uid(),
+        list_id: currentListId,
+        artist_id: artist.id,
+        source_pdf: _sourcePdf || '',
+        label: label || '',
+        deadline: ba.deadline || null,
+        general_direction: ba.general_direction || null,
+        track_types: Array.isArray(ba.track_types) ? ba.track_types : [],
+        submission_emails: safeEmails,
+        matched_contact_ids: matchedContactIds,
+      };
+      briefs.push(brief);
+      await syncBrief(brief);
+      importedCount++;
+    } catch (err) {
+      errors.push(ba.name + ': ' + err.message);
+    }
+  }
+
+  render();
+  if (errors.length > 0) {
+    toast(`Imported ${importedCount} briefs · ${errors.length} failed`, true);
+  } else {
+    const contactNote = matchedContactIds.length > 0
+      ? ` · ${matchedContactIds.length} contact${matchedContactIds.length !== 1 ? 's' : ''} matched`
+      : '';
+    toast(`Brief imported: ${importedCount} artist${importedCount !== 1 ? 's' : ''}${contactNote}`);
+  }
+}
+
 function artistExists(name) {
   const needle = name.toLowerCase();
   return artists.some(a => a.name.toLowerCase() === needle);
