@@ -2225,17 +2225,17 @@ function getSorted(list) {
 function dragStart(e, id) {
   dragSrcId = id;
   e.dataTransfer.effectAllowed = 'move';
-  setTimeout(() => document.querySelector(`.artist-card[data-id="${id}"]`)?.classList.add('dragging'), 0);
+  setTimeout(() => document.querySelector(`.artist-row[data-id="${id}"]`)?.classList.add('dragging'), 0);
 }
 function dragEnd() {
-  document.querySelectorAll('.artist-card.dragging, .artist-card.drag-over')
+  document.querySelectorAll('.artist-row.dragging, .artist-row.drag-over')
     .forEach(el => el.classList.remove('dragging', 'drag-over'));
 }
 function dragOver(e, id) {
   e.preventDefault();
   e.dataTransfer.dropEffect = 'move';
-  document.querySelectorAll('.artist-card.drag-over').forEach(el => el.classList.remove('drag-over'));
-  if (id !== dragSrcId) document.querySelector(`.artist-card[data-id="${id}"]`)?.classList.add('drag-over');
+  document.querySelectorAll('.artist-row.drag-over').forEach(el => el.classList.remove('drag-over'));
+  if (id !== dragSrcId) document.querySelector(`.artist-row[data-id="${id}"]`)?.classList.add('drag-over');
 }
 function dragDrop(e, targetId) {
   e.preventDefault();
