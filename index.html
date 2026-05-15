@@ -2283,12 +2283,12 @@ async function loadListArtists(listId) {
     const survivingBriefs = [];
     for (const brief of loadedBriefs) {
       if (brief.archived_at && new Date(brief.archived_at) < twoMonthsAgo) {
-        window.kc.deleteBrief(brief.id); // fire and forget
+        window.kc.deleteBrief?.(brief.id); // fire and forget
         continue;
       }
       if (!brief.archived_at && shouldArchive(brief)) {
         brief.archived_at = nowIso;
-        window.kc.upsertBrief(listId, brief); // fire and forget
+        window.kc.upsertBrief?.(listId, brief); // fire and forget
       }
       survivingBriefs.push(brief);
     }
@@ -3358,6 +3358,7 @@ async function _processParsedBrief(parsed) {
         track_types: Array.isArray(ba.track_types) ? ba.track_types : [],
         submission_emails: safeEmails,
         matched_contact_ids: matchedContactIds,
+        created_at: new Date().toISOString(),
       };
       briefs.push(brief);
       await syncBrief(brief);
