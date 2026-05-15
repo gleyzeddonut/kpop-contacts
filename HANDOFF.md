@@ -3,9 +3,11 @@
 
 ---
 
-## Current State (2026-05-14)
+## Current State (2026-05-15)
 
-The Briefs feature is fully implemented and working. Latest commit: `e098412`. The briefs table migrations have been run in Supabase. PDF import works end-to-end using a user-stored Anthropic API key (required — see below).
+The Briefs feature is fully implemented (including brief indicators, filter, archival, and improved PDF hyperlink extraction). Latest commit: `99603c8` on `main`. All migrations through v4 have been run in Supabase.
+
+**In progress (brainstorm complete, not yet implemented):** Global contacts view + brief-to-contact auto-creation. Design spec at `docs/superpowers/specs/2026-05-15-contacts-view-brief-contacts-design.md`. Implementation plan not yet written — next step is to invoke `writing-plans` on that spec.
 
 ---
 
@@ -146,18 +148,24 @@ dist/                         — build output
 
 ### JS State Globals
 ```js
-let artists = []          // all artists for current list
-let contacts = []         // all contacts for current list
-let briefs = []           // all briefs for current list (NEW)
+let artists = []              // all artists for current list
+let contacts = []             // all contacts for current list
+let briefs = []               // active (non-archived) briefs for current list
+let archivedBriefs = []       // archived but not yet deleted briefs
 let lists = []
 let currentListId = null
-let currentListRole = null  // 'owner' | 'editor' | 'viewer'
-let selectedId = null       // selected artist id
-let wsTab = 'contacts'      // 'contacts' | 'briefs' (NEW)
+let currentListRole = null    // 'owner' | 'editor' | 'viewer'
+let selectedId = null         // selected artist id
+let selectedContactId = null  // selected contact id (notes panel)
+let wsTab = 'contacts'        // 'contacts' | 'briefs'
 let activeLabel = 'all'
 let sortMode = 'name'
 let searchQuery = ''
 let wsStatusFilter = 'all'
+let briefFilterActive = false // filter artist list to artists with active briefs
+let archivedExpanded = false  // expand archived briefs section in briefs tab
+let contactsViewActive = false  // PLANNED: switches middle col to contacts list
+let contactEditMode = false     // PLANNED: contact panel edit vs read-only
 ```
 
 ### Contact Record Shape
@@ -168,6 +176,7 @@ let wsStatusFilter = 'all'
   label: string,
   artist_ids: uuid[],
   name, role, email, phone, social: string,
+  extra_emails: string[],       // PLANNED (migration_v5): additional emails
   status: 'cold' | 'reached_out' | 'in_convo' | 'placed',
   notes_log: [{ date: 'YYYY-MM-DD', text: string }]
 }
@@ -195,8 +204,8 @@ let wsStatusFilter = 'all'
 
 - **`lists`** — user-owned lists (id, owner_id, name, created_at)
 - **`artists`** — JSONB data store (id, list_id, data, updated_at)
-- **`contacts`** — (id, list_id, label, artist_ids, name, role, email, phone, social, status, notes_log, created_at, updated_at)
-- **`briefs`** — (id, list_id, artist_id, source_pdf, label, deadline, general_direction, track_types jsonb, submission_emails text[], matched_contact_ids uuid[], created_at)
+- **`contacts`** — (id, list_id, label, artist_ids, name, role, email, phone, social, status, notes_log, created_at, updated_at) + `extra_emails jsonb` PLANNED (migration_v5)
+- **`briefs`** — (id, list_id, artist_id, source_pdf, label, deadline, general_direction, track_types jsonb, submission_emails text[], matched_contact_ids uuid[], archived_at timestamptz, created_at)
 - **`list_shares`** — (list_id, shared_with_email, role)
 - **`share_tokens`** — (id, list_id, role, created_by)
 
@@ -218,10 +227,49 @@ npm run pack       # build .app → dist/K-CONTACTS-darwin-arm64/K-CONTACTS.app
 
 ---
 
+## Briefs Feature — Archival System (completed 2026-05-14)
+
+Brief archival runs automatically on each `loadListArtists()` call:
+
+- `shouldArchive(brief)` — returns true if: deadline is past, or brief is ASAP/no-deadline and `created_at` > 30 days ago
+- Archival pass stamps `archived_at` on newly-expired briefs (fire-and-forget upsert), deletes briefs where `archived_at` > 60 days ago
+- `briefs[]` = active only; `archivedBriefs[]` = archived but not deleted
+- Briefs tab shows collapsible "Archived (N)" section (global `archivedExpanded` flag, resets on artist select)
+- `briefFilterActive` — toggle button in artist list header; resets on list switch
+- Purple glow dot on artist avatars that have active briefs
+- Brief ref-pills now use `data-action="open-url"` delegation (no inline onclick)
+
+## Brief PDF Parsing — Hyperlink Extraction (completed 2026-05-15)
+
+`extractPdfUris(buffer)` in `main.js` reads raw PDF bytes for `/URI` annotation metadata (music URLs invisible to text reading), filters to music hosts (Spotify, YouTube, SoundCloud, disco.ac, untitled.stream, somespecialmagic.com), and injects them into the Claude prompt as hints so Claude can match URLs to reference entries.
+
+Ref-pills with title but no URL render as dimmed non-clickable `.ref-pill-nourl` spans (not silently dropped).
+
+## Next Feature — Contacts View & Brief Contacts (designed 2026-05-15, NOT YET IMPLEMENTED)
+
+**Design spec:** `docs/superpowers/specs/2026-05-15-contacts-view-brief-contacts-design.md`
+
+**Next action:** Invoke `writing-plans` on that spec to create an implementation plan, then implement with subagent-driven development.
+
+**Summary of what's designed:**
+
+1. **Global Contacts View** — sidebar footer "All Contacts" button switches middle column to flat contact list. Label filter still applies. ⌘F / search bar filters contacts (by name, role, email, label) when in this mode. Clicking a contact shows the notes panel in the right column with a read-only "Artists: X, Y" line at top.
+
+2. **Read-only contact panel (everywhere)** — `renderNotesPanel` defaults to read-only display. `✎ Edit` button enables input fields; `✓ Done` saves and returns to read-only. Applies in both global contacts view AND within artist workspace. Global flag: `contactEditMode`.
+
+3. **Extra emails** — contacts gain `extra_emails: string[]` (migration_v5). When a brief contact matches by name but has a different email, the new email is added to `extra_emails` instead of overwriting. Deduplication checks `email` + all `extra_emails`. UI shows all email lines in panel; edit mode allows adding/removing.
+
+4. **Brief → contact auto-creation** — brief parsing prompt gains top-level `contacts: [{name, email, role}]`. In `_processParsedBrief`, for each: email-only → create if email not seen; name+email → check email first (skip if found), then check name (add email if found without it), else create new. New contacts get `artist_ids` of all artists in that brief, `label` from brief, `status: 'cold'`.
+
+**Migration needed (user must run in Supabase):**
+```sql
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS extra_emails jsonb NOT NULL DEFAULT '[]';
+```
+
 ## Suggested Next Steps
 
+- **Implement contacts view + brief contacts** — spec is written, just needs plan + implementation
 - **CSV export** of contacts for an artist or label
 - **Add more label normalizations** to `LABEL_NORMALIZE_MAP` as new variants appear
-- **"All briefs" view** across all artists (currently only visible per-artist)
 - **Brief status tracking** — mark a brief as "pitched" or "passed"
 - **Delete brief** — UI to remove a brief card (IPC handler exists, no UI trigger yet)
