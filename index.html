@@ -2169,8 +2169,11 @@ let customOrder = [];
 let dragSrcId = null;
 let confirmCallback = null;
 let wsStatusFilter = 'all'; // filter pill selection in workspace
-let briefs = [];          // all briefs for current list
-let wsTab = 'contacts';   // 'contacts' | 'briefs'
+let briefs = [];             // active (non-archived) briefs for current list
+let archivedBriefs = [];     // archived-but-not-yet-deleted briefs
+let wsTab = 'contacts';      // 'contacts' | 'briefs'
+let briefFilterActive = false; // filter artist list to artists with active briefs
+let archivedExpanded = false;  // archived section expanded in briefs tab
 let selectedContactId = null; // contact whose notes panel is open
 
 // ── Scan queue ──
@@ -2646,6 +2649,17 @@ function deadlineBadgeClass(deadline) {
     return parsed < new Date() ? 'overdue' : 'future';
   }
   return 'asap';
+}
+
+function shouldArchive(brief) {
+  const oneMonthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  if (!brief.deadline) return new Date(brief.created_at) < oneMonthAgo;
+  const d = brief.deadline.toUpperCase();
+  if (d.includes('ASAP')) return new Date(brief.created_at) < oneMonthAgo;
+  const parsed = new Date(brief.deadline.replace(/By\s*/i, '').trim());
+  if (!isNaN(parsed)) return parsed < new Date();
+  // Unparseable deadline string — treat like ASAP
+  return new Date(brief.created_at) < oneMonthAgo;
 }
 
 function renderBriefsTab(artist) {
