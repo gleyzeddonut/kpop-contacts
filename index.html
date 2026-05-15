@@ -2765,6 +2765,27 @@ function renderDetail() {
   const empty = document.getElementById('detail-empty');
   const content = document.getElementById('detail-content');
 
+  if (contactsViewActive) {
+    if (!selectedContactId) {
+      empty.style.display = 'flex';
+      content.style.display = 'none';
+      return;
+    }
+    const contact = contacts.find(c => c.id === selectedContactId);
+    if (!contact) {
+      empty.style.display = 'flex';
+      content.style.display = 'none';
+      return;
+    }
+    empty.style.display = 'none';
+    content.style.display = 'flex';
+    content.style.flexDirection = 'column';
+    content.style.height = '100%';
+    content.innerHTML = '<div id="notes-panel" class="workspace-notes-panel open" style="flex:1;max-width:none;width:100%"></div>';
+    renderNotesPanel(contact, { showArtists: true });
+    return;
+  }
+
   if (!selectedId) {
     empty.style.display = 'flex';
     content.style.display = 'none';
