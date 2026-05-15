@@ -5,13 +5,13 @@
 
 ## Current State (2026-05-14)
 
-The v1.1 redesign is complete and all UI polish from the post-redesign session is done. Latest commit: `bee96b7` — resizable columns.
+The Briefs feature is fully implemented and working. Latest commit: `e098412`. The briefs table migrations have been run in Supabase. PDF import works end-to-end using a user-stored Anthropic API key (required — see below).
 
 ---
 
 ## What This App Is
 
-A desktop Electron app for K-pop A&R contacts. The user is a songwriter who pitches songs to K-pop labels. The app lets them maintain a directory of artists, the labels they're signed to, and the A&R contacts at those labels. Claude (via Anthropic API + web search) auto-fills artist info and finds contact details.
+A desktop Electron app for K-pop A&R contacts. The user is a songwriter who pitches songs to K-pop labels. The app maintains a directory of artists, their labels, and A&R contacts. Claude auto-fills artist info and finds contacts. A new Briefs feature parses label brief PDFs and attaches structured brief data to each artist.
 
 ---
 
@@ -22,8 +22,7 @@ A desktop Electron app for K-pop A&R contacts. The user is a songwriter who pitc
 | Shell | Electron 35 (macOS arm64) |
 | UI | Single `index.html` — vanilla JS + CSS, no build step, no framework |
 | Backend/Auth | Supabase (hardcoded URL + anon key in `main.js`) |
-| AI | Anthropic API (`claude-sonnet-4-6` + `web_search_20250305` hosted tool) |
-| Fonts | Montserrat (Google Fonts, loads at runtime), Space Mono, system fallbacks |
+| AI | Anthropic API (`claude-sonnet-4-6`) via Supabase edge function proxy (for artist scan) and direct API call (for PDF parsing) |
 
 **Credentials (hardcoded in `main.js` lines 57–59):**
 - `SUPABASE_URL` = `https://rzjqfhioljtvhwbokbbo.supabase.co`
@@ -34,23 +33,24 @@ A desktop Electron app for K-pop A&R contacts. The user is a songwriter who pitc
 ## File Structure
 
 ```
-index.html           — entire UI (3800+ lines): all HTML, CSS, and JS in one file
-main.js              — Electron main process: IPC handlers, Claude API calls, window setup
-preload.js           — context bridge: exposes window.kc.* to renderer
-db.js                — all Supabase calls: auth, lists, artists, contacts, shares, tokens, realtime
-schema.sql           — original Supabase schema (run once to set up)
-migration_contacts.sql      — adds contacts table + RLS + realtime (run once)
-migration_v2_status_notes.sql — adds status + notes_log columns to contacts (⚠️ NOT YET RUN)
-HANDOFF.md           — this file
-package.json         — electron-packager build script
-dist/                — build output
+index.html                    — entire UI (~4200 lines): all HTML, CSS, JS in one file
+main.js                       — Electron main process: IPC handlers, Claude API, window setup
+preload.js                    — context bridge: exposes window.kc.* to renderer
+db.js                         — all Supabase calls: auth, lists, artists, contacts, briefs, shares
+schema.sql                    — original Supabase schema
+migration_contacts.sql        — adds contacts table + RLS
+migration_v2_status_notes.sql — adds status + notes_log to contacts (✅ RUN)
+migration_v3_briefs.sql       — adds briefs table + RLS (✅ RUN)
+HANDOFF.md                    — this file
+package.json                  — electron-packager build script
+dist/                         — build output
 ```
 
 ---
 
 ## Layout
 
-3-column CSS grid — **all columns are user-resizable** (drag the borders):
+3-column CSS grid — all columns are user-resizable (drag the borders). Widths persist in `localStorage` under `kpc-col-widths-v1`.
 
 ```
 ┌─────────────┬──────────────────┬──────────────────────────────────────┐
@@ -59,36 +59,86 @@ dist/                — build output
 └─────────────┴──────────────────┴──────────────────────────────────────┘
 ```
 
-Column widths are persisted in localStorage under `kpc-col-widths-v1`. Minimums: 80px sidebar, 100px artist list.
-
 ---
 
-## UI Design (v1.1)
+## Briefs Feature (NEW — completed this session)
 
-### Sidebar
-- Black background (`var(--bg)`)
-- "Labels" section header + list of normalized label names with artist counts
-- Clicking a label filters the artist list; active item highlights pink
-- Label names are normalized — variants like "BIGHIT MUSIC (HYBE)" and "Big Hit Music" both show as "BIGHIT"
-- Parent-company parentheticals like "(HYBE)" are stripped automatically
+### What it does
+- User clicks "Import Brief" in the app header (or drags a PDF anywhere onto the app window)
+- Claude parses the PDF and extracts: label name, submission emails, and per-artist sections (deadline, general direction, track types with wants/avoids/tags, YouTube reference links)
+- Artists are fuzzy-matched to existing entries (strips parentheticals like "of SHINee"); unmatched artists are auto-created
+- Submission emails are matched against existing contacts; matched contact IDs stored on the brief
+- Each artist gets a "Briefs" tab in the workspace alongside the existing "Contacts" tab
 
-### Artist List Column
-- Bare compact rows — no column title, no search/filter bar
-- Each row: colored avatar bubble (label initial + label gradient) · artist name · status dot
-- Avatar shows the LABEL's first letter (B=BIGHIT, S=SM, Y=YG, J=JYP, etc.) in a gradient derived from the label's dot color
-- Status dot color = highest-priority contact status for that artist
-- No label name text in the row (label communicated by avatar color+letter)
+### How it works
+**PDF parsing bypasses the Supabase proxy** (which has a 2MB body limit — a 1.3MB PDF becomes 1.7MB base64). Instead it calls Anthropic directly from `main.js` using a user-stored API key.
 
-### Workspace (Detail Panel)
-- Artist header: name + label (accent color) + contact count
-- Status filter pills: All / Cold / Reached Out / In Convo / Placed
-- Compact contact table: # · Name · Role · Email · Status · hover actions
-- Double-click a contact row → opens 240px Notes Panel on the right
-- Notes panel: inline editing of all fields, status dots, quick actions (Email/Copy/DM), append-only notes log
+**The user must set their Anthropic API key in Settings → Account → Anthropic API Key.** The key is stored encrypted via Electron `safeStorage` in `~/.../userData/api-key.bin`.
 
-### Header
-- Logo, list name, back button, share button, Add Artist button (primary), Settings
-- Import button removed — Add Artist modal has a Bulk Import tab
+### Key files and functions
+
+**`main.js`:**
+- `getStoredApiKey()` / `storeApiKey(key)` — encrypted key storage via `safeStorage`
+- `callClaudeDirect(body, apiKey)` — calls `api.anthropic.com/v1/messages` directly
+- `parseBriefPdf(filePath)` — reads PDF → base64 → Claude → parses JSON response
+- `briefProgress(msg)` — logs to terminal AND sends `brief:progress` IPC event to renderer
+- IPC handlers: `briefs:import` (dialog), `briefs:importFromPath` (drag-drop), `briefs:getAll`, `briefs:upsert`, `briefs:delete`
+- `get-config` returns `{ anthropicApiKey }`, `set-config` saves it
+
+**`preload.js`:**
+- `importBriefPdf()` — triggers file dialog
+- `importBriefPdfFromPath(filePath)` — used by drag-drop
+- `getPathForFile(file)` — wraps `webUtils.getPathForFile()` (Electron 35 API; `file.path` is deprecated)
+- `getBriefs(listId)`, `upsertBrief(listId, brief)`, `deleteBrief(briefId)`
+- `onBriefProgress(cb)` — renderer listens for progress events
+
+**`db.js`:**
+- `getBriefs(listId)`, `upsertBrief(listId, brief)`, `deleteBrief(briefId)`
+
+**`index.html`:**
+- State: `let briefs = []`, `let wsTab = 'contacts'`
+- `loadListArtists()` fetches briefs in same `Promise.all` as artists and contacts
+- `syncBrief(brief)` — upserts to Supabase
+- `normalizeBriefArtistName(name)` — strips trailing parentheticals before matching
+- `matchArtistByName(rawName)` — fuzzy match against `artists[]`
+- `autoCreateArtistFromBrief(rawName, label)` — creates artist if no match found
+- `_processParsedBrief(parsed)` — loops artists, matches/creates, writes briefs, toasts result
+- `importBriefPdf()` — button handler; sets `import-brief-btn` to "Reading brief…" while waiting
+- `setBriefBtnLoading(loading)` — disables/restores the Import Brief header button
+- `renderDetail()` — now includes Contacts|Briefs tab row and conditional workspace body
+- `renderBriefsTab(artist)` — renders brief cards with deadline badges, track types, ref pills
+- `deadlineBadgeClass(deadline)` — returns `'asap'` | `'overdue'` | `'future'` | `null`
+- `selectArtist()` — resets `wsTab = 'contacts'` when switching artists
+- Drag-drop: `document.addEventListener('drop', ...)` — calls `importBriefPdfFromPath` via `getPathForFile`
+
+### Briefs data shape (Supabase `briefs` table)
+```js
+{
+  id: uuid,
+  list_id: uuid,
+  artist_id: uuid,
+  source_pdf: string,           // filename e.g. "2026.05 SM LEAD.pdf"
+  label: string,                // e.g. "SM Entertainment"
+  deadline: string | null,      // as-is from PDF: "ASAP", "By May 8th", null
+  general_direction: string | null,
+  track_types: [{
+    name: string,
+    tags: string[],             // hashtags from heading e.g. "#GenZ_Energy"
+    wants: string[],
+    avoids: string[],
+    references: [{ title: string, url: string }]
+  }],
+  submission_emails: string[],
+  matched_contact_ids: uuid[],
+  created_at: timestamptz
+}
+```
+
+### Deadline badge colors
+- `ASAP` or unparseable string → yellow
+- Parsed date in the past → red
+- Parsed date in the future → green
+- No deadline → no badge
 
 ---
 
@@ -98,13 +148,16 @@ Column widths are persisted in localStorage under `kpc-col-widths-v1`. Minimums:
 ```js
 let artists = []          // all artists for current list
 let contacts = []         // all contacts for current list
+let briefs = []           // all briefs for current list (NEW)
 let lists = []
 let currentListId = null
 let currentListRole = null  // 'owner' | 'editor' | 'viewer'
 let selectedId = null       // selected artist id
-let activeLabel = 'all'     // sidebar filter (normalized label name)
-let sortMode = 'name'       // 'name' | 'date' | 'label' | 'custom'
+let wsTab = 'contacts'      // 'contacts' | 'briefs' (NEW)
+let activeLabel = 'all'
+let sortMode = 'name'
 let searchQuery = ''
+let wsStatusFilter = 'all'
 ```
 
 ### Contact Record Shape
@@ -112,52 +165,42 @@ let searchQuery = ''
 {
   id: uuid,
   list_id: uuid,
-  label: string,           // raw label string from artist
-  artist_ids: uuid[],      // artists this contact covers; [] = label-wide
+  label: string,
+  artist_ids: uuid[],
   name, role, email, phone, social: string,
   status: 'cold' | 'reached_out' | 'in_convo' | 'placed',
-  notes_log: [{ date: 'YYYY-MM-DD', text: string }]  // append-only
+  notes_log: [{ date: 'YYYY-MM-DD', text: string }]
 }
 ```
-
-### Label System
-- `LABEL_MAP` — maps keyword arrays to `{ cls, dot }` for color styling
-- `LABEL_NORMALIZE_MAP` — maps raw label string variants to canonical display names
-- `normalizeLabel(label)` — strips trailing parentheticals, looks up map, falls back to abbreviating "Entertainment" → "Ent."
-- `avatarGradient(hexColor)` — derives a `linear-gradient(135deg, dark, mid)` from a dot color using 0.28× and 0.58× multipliers
 
 ---
 
 ## Key Gotchas
 
-- **`window.prompt()` is silently blocked** in Electron 35 with `contextIsolation: true` — all prompts use custom `showPrompt()` modal
-- **`<button>` elements on macOS** get white default background without `background: transparent; -webkit-appearance: none` — all `.artist-row` buttons need this
-- **`normalizeLabel()` is used for filtering** — `activeLabel` always holds the normalized name, and `getFiltered()` compares `normalizeLabel(a.label)` against it. Don't compare raw `a.label` to `activeLabel`.
-- **Column resizer** uses absolutely-positioned handles inside `.app` (which has `position: relative`). They're not grid children — they overlay the borders. JS sets `gridTemplateColumns` directly on `.app.style`.
-- **`initials()`** returns a single character: `name.trim().charAt(0)`. Do not change to multi-char.
-- **`upsertContact` in `db.js`** spreads all fields — no db.js changes needed for new contact fields
-- **`status` values** must be whitelisted before use as CSS class: `['cold','reached_out','in_convo','placed']`
-- **Action buttons** in notes panel use `data-action`/`data-value` (not inline onclick) to prevent XSS
-- Always use `h()` for user data in innerHTML
-
----
-
-## ⚠️ Pending: Supabase Migration
-
-`migration_v2_status_notes.sql` adds `status` and `notes_log` columns to the `contacts` table. **This has never been run.** Contact status tracking and notes log are non-functional until this migration is applied.
-
-Run it in the Supabase SQL Editor at: `https://rzjqfhioljtvhwbokbbo.supabase.co`
+- **Anthropic API key required for PDF import.** Without it, `parseBriefPdf` falls back to the Supabase proxy, which will 503 on any real brief PDF (payload too large). Key goes in Settings → Account.
+- **`webUtils.getPathForFile(file)` not `file.path`** — Electron 35 removed `file.path` for drag-drop files. Always use `window.kc.getPathForFile(file)` in the renderer.
+- **`window.prompt()` is silently blocked** in Electron 35 with `contextIsolation: true` — all prompts use custom `showPrompt()` modal.
+- **`<button>` elements on macOS** get white default background without `background: transparent; -webkit-appearance: none`.
+- **`normalizeLabel()` is used for filtering** — `activeLabel` always holds the normalized name.
+- **Column resizer** uses absolutely-positioned handles inside `.app`. JS sets `gridTemplateColumns` directly on `.app.style`. Widths persist in localStorage.
+- **Always use `h()` for user data in innerHTML** — all brief content (from Claude) goes through `h()`.
+- **`status` values** must be whitelisted before use as CSS class: `['cold','reached_out','in_convo','placed']`.
+- **Brief reference pill URLs** are validated to start with `https://` or `http://` before rendering as links.
+- **Toast z-index is 9999** — above all overlays including settings panel.
+- **`max_tokens: 8192`** for PDF parsing — 4096 was too low and truncated large briefs mid-JSON.
 
 ---
 
 ## Database Schema (Supabase)
 
-- **`lists`** — user-owned contact lists (id, owner_id, name, created_at)
-- **`artists`** — one row per artist, data stored as JSONB (id, list_id, data, updated_at)
-- **`contacts`** — standalone contacts table (id, list_id, label, artist_ids uuid[], name, role, email, phone, social, notes, **status**, **notes_log**, created_at, updated_at)
-  - `status` and `notes_log` columns require migration_v2_status_notes.sql
-- **`list_shares`** — share a list with another user by email (viewer/editor role)
-- **`share_tokens`** — UUID tokens for invite links
+- **`lists`** — user-owned lists (id, owner_id, name, created_at)
+- **`artists`** — JSONB data store (id, list_id, data, updated_at)
+- **`contacts`** — (id, list_id, label, artist_ids, name, role, email, phone, social, status, notes_log, created_at, updated_at)
+- **`briefs`** — (id, list_id, artist_id, source_pdf, label, deadline, general_direction, track_types jsonb, submission_emails text[], matched_contact_ids uuid[], created_at)
+- **`list_shares`** — (list_id, shared_with_email, role)
+- **`share_tokens`** — (id, list_id, role, created_by)
+
+All tables have RLS. Briefs RLS mirrors artists: owner full access, editors read/write, viewers read.
 
 ---
 
@@ -177,7 +220,8 @@ npm run pack       # build .app → dist/K-CONTACTS-darwin-arm64/K-CONTACTS.app
 
 ## Suggested Next Steps
 
-1. **Run `migration_v2_status_notes.sql`** in Supabase SQL Editor — unblocks status + notes log
-2. **Test contact flow** end-to-end after migration
-3. **CSV export** of contacts for an artist or label
-4. **Add more label normalizations** to `LABEL_NORMALIZE_MAP` as new label variants appear in real data
+- **CSV export** of contacts for an artist or label
+- **Add more label normalizations** to `LABEL_NORMALIZE_MAP` as new variants appear
+- **"All briefs" view** across all artists (currently only visible per-artist)
+- **Brief status tracking** — mark a brief as "pitched" or "passed"
+- **Delete brief** — UI to remove a brief card (IPC handler exists, no UI trigger yet)

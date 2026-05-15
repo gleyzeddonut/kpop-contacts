@@ -2806,7 +2806,7 @@ function renderBriefsTab(artist) {
           const avoids = (tt.avoids || []).map(av => `✕ ${h(av)}`).join('<br>');
           const refs = (tt.references || [])
             .filter(r => r.url && (r.url.startsWith('https://') || r.url.startsWith('http://')))
-            .map(r => `<a class="ref-pill" href="#" onclick="event.preventDefault();window.open('${h(r.url)}')">▶ ${h(r.title || r.url)}</a>`)
+            .map(r => `<a class="ref-pill" href="#" data-action="open-url" data-url="${h(r.url)}">▶ ${h(r.title || r.url)}</a>`)
             .join('');
           const tagsLine = (tt.tags || []).length > 0
             ? `<div style="font-size:9px;color:var(--text-dim);font-family:var(--font-mono);margin-bottom:4px">${tt.tags.map(t => h(t)).join(' ')}</div>`
@@ -2850,7 +2850,7 @@ function renderBriefsTab(artist) {
                 const avoids = (tt.avoids || []).map(av => `✕ ${h(av)}`).join('<br>');
                 const refs = (tt.references || [])
                   .filter(r => r.url && (r.url.startsWith('https://') || r.url.startsWith('http://')))
-                  .map(r => `<a class="ref-pill" href="#" onclick="event.preventDefault();window.open('${h(r.url)}')">▶ ${h(r.title || r.url)}</a>`)
+                  .map(r => `<a class="ref-pill" href="#" data-action="open-url" data-url="${h(r.url)}">▶ ${h(r.title || r.url)}</a>`)
                   .join('');
                 const tagsLine = (tt.tags || []).length > 0
                   ? `<div style="font-size:9px;color:var(--text-dim);font-family:var(--font-mono);margin-bottom:4px">${tt.tags.map(t => h(t)).join(' ')}</div>`
@@ -2869,13 +2869,15 @@ function renderBriefsTab(artist) {
             </div>`;
         }).join('')
       : '';
-    pane.innerHTML += `
+    const sec = document.createElement('div');
+    sec.innerHTML = `
       <div class="brief-archived-section">
         <button class="brief-archived-header" data-action="toggle-archived-expanded">
           ${chevron} Archived (${artistArchived.length})
         </button>
         ${archivedCards}
       </div>`;
+    pane.appendChild(sec);
   }
 }
 
@@ -3603,6 +3605,7 @@ document.addEventListener('click', e => {
   const {action} = el.dataset;
   if (action === 'select')              selectArtist(el.dataset.id);
   else if (action === 'filter')         setLabel(el.dataset.label);
+  else if (action === 'open-url')       { e.preventDefault(); if (el.dataset.url) window.open(el.dataset.url); }
   else if (action === 'toggle-brief-filter') { briefFilterActive = !briefFilterActive; render(); }
   else if (action === 'toggle-archived-expanded') { archivedExpanded = !archivedExpanded; renderDetail(); }
   else if (action === 'scan-web')       scanWeb(el.dataset.id);
