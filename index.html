@@ -839,6 +839,55 @@
   .np-field-sm { font-size: 10px; color: var(--text-muted); }
   .np-field-sm::placeholder { color: var(--text-dim); }
 
+  .np-val {
+    font-size: 10px;
+    color: var(--text);
+    padding: 4px 0 3px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    min-height: 22px;
+  }
+  .np-val.np-val-name { font-size: 13px; font-weight: 700; border-bottom: none; padding-bottom: 2px; }
+  .np-val.dim { color: var(--text-dim); }
+  .np-val.email { color: #5a8aff; }
+  .np-edit-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-dim);
+    font-size: 9px;
+    padding: 2px 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .np-edit-btn:hover { color: #a855f7; border-color: #a855f7; }
+  .np-artists-line {
+    font-size: 9px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    margin-bottom: 4px;
+  }
+  .np-artists-line span { color: #5a8aff; }
+  .np-extra-email-row { display: flex; align-items: center; gap: 4px; }
+  .np-remove-email {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 11px;
+    cursor: pointer;
+    padding: 0 3px;
+    line-height: 1;
+  }
+  .np-remove-email:hover { color: #FF5555; }
+  .np-add-email-link {
+    font-size: 9px;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-family: var(--font-mono);
+    padding: 2px 0;
+    display: inline-block;
+  }
+  .np-add-email-link:hover { color: #a855f7; }
+
   .np-status-row {
     display: flex;
     align-items: center;
@@ -3042,17 +3091,19 @@ function toggleNotesPanel(contactId) {
     selectedContactId = null;
   } else {
     selectedContactId = contactId;
+    contactEditMode = false;
   }
   renderDetail();
 }
 
-function renderNotesPanel(contact) {
+function renderNotesPanel(contact, opts = {}) {
   const panel = document.getElementById('notes-panel');
   if (!panel) return;
 
   const statusColors = { cold: '#6a8aff', reached_out: '#30D158', in_convo: '#FF9500', placed: '#BF5AF2' };
   const currentStatus = ['cold','reached_out','in_convo','placed'].includes(contact.status) ? contact.status : 'cold';
   const notesLog = Array.isArray(contact.notes_log) ? contact.notes_log : [];
+  const extraEmails = Array.isArray(contact.extra_emails) ? contact.extra_emails : [];
 
   const statusDotsHTML = Object.entries(statusColors).map(([s, color]) => `
     <button class="np-status-dot ${currentStatus===s?'active':''}"
@@ -3069,12 +3120,23 @@ function renderNotesPanel(contact) {
           <div class="np-note-text">${h(entry.text)}</div>
         </div>`).join('');
 
-  panel.innerHTML = `
-    <div class="np-header">
-      <div style="display:flex;justify-content:flex-end;gap:4px;margin-bottom:6px">
-        <button class="np-close" style="color:#FF5555" data-action="delete-contact" data-contact-id="${h(contact.id)}" title="Delete contact">🗑</button>
-        <button class="np-close" onclick="toggleNotesPanel('${h(contact.id)}')">✕</button>
-      </div>
+  const artistNames = opts.showArtists
+    ? artists.filter(a => Array.isArray(contact.artist_ids) && contact.artist_ids.includes(a.id)).map(a => a.name)
+    : [];
+  const artistsLine = artistNames.length > 0
+    ? `<div class="np-artists-line">Artists: ${artistNames.map(n => `<span>${h(n)}</span>`).join(', ')}</div>`
+    : '';
+
+  let fieldsHTML;
+  if (contactEditMode) {
+    const extraInputs = extraEmails.map((em, i) => `
+      <div class="np-extra-email-row">
+        <input class="np-field np-field-sm" value="${h(em)}"
+               placeholder="Email"
+               onblur="saveExtraEmail('${h(contact.id)}',${i},this.value)">
+        <button class="np-remove-email" onclick="removeExtraEmail('${h(contact.id)}',${i})" title="Remove">×</button>
+      </div>`).join('');
+    fieldsHTML = `
       <input class="np-field np-field-name" value="${h(contact.name)}"
              placeholder="Name"
              onblur="saveContactField('${h(contact.id)}','name',this.value)">
@@ -3084,12 +3146,44 @@ function renderNotesPanel(contact) {
       <input class="np-field np-field-sm" value="${h(contact.email||'')}"
              placeholder="Email"
              onblur="saveContactField('${h(contact.id)}','email',this.value)">
+      ${extraInputs}
+      <span class="np-add-email-link" onclick="addExtraEmailInput('${h(contact.id)}')">+ Add email</span>
       <input class="np-field np-field-sm" value="${h(contact.phone||'')}"
              placeholder="Phone"
              onblur="saveContactField('${h(contact.id)}','phone',this.value)">
       <input class="np-field np-field-sm" value="${h(contact.social||'')}"
              placeholder="Instagram / Twitter"
-             onblur="saveContactField('${h(contact.id)}','social',this.value)">
+             onblur="saveContactField('${h(contact.id)}','social',this.value)">`;
+  } else {
+    const extraEmailsHTML = extraEmails.filter(Boolean).map(em =>
+      `<div class="np-val email">${h(em)}</div>`).join('');
+    fieldsHTML = `
+      <div class="np-val np-val-name">${h(contact.name || '')}</div>
+      <div class="np-val dim">${h(contact.role || '')}</div>
+      <div class="np-val email">${h(contact.email || '')}</div>
+      ${extraEmailsHTML}
+      <div class="np-val dim">${h(contact.phone || '')}</div>
+      <div class="np-val dim">${h(contact.social || '')}</div>`;
+  }
+
+  const editBtnHTML = contactEditMode
+    ? `<button class="np-edit-btn" data-action="toggle-contact-edit" data-contact-id="${h(contact.id)}">✓ Done</button>`
+    : `<button class="np-edit-btn" data-action="toggle-contact-edit" data-contact-id="${h(contact.id)}">✎ Edit</button>`;
+
+  const deleteBtn = `<button class="np-close" style="color:#FF5555;margin-right:2px" data-action="delete-contact" data-contact-id="${h(contact.id)}" title="Delete contact">🗑</button>`;
+  const closeBtn = contactsViewActive
+    ? ''
+    : `<button class="np-close" onclick="toggleNotesPanel('${h(contact.id)}')">✕</button>`;
+
+  panel.innerHTML = `
+    <div class="np-header">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:4px;margin-bottom:6px">
+        <div style="flex:1;min-width:0">${artistsLine}</div>
+        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+          ${deleteBtn}${closeBtn}${editBtnHTML}
+        </div>
+      </div>
+      ${fieldsHTML}
       <div class="np-status-row">
         ${statusDotsHTML}
         <span class="np-status-label-text" style="color:${statusColors[currentStatus]}">${statusLabel(currentStatus)}</span>
@@ -3108,6 +3202,38 @@ function renderNotesPanel(contact) {
       ${logsHTML}
       <button class="np-add-note-btn" onclick="showAddNoteInput('${h(contact.id)}')">+ Add note</button>
     </div>`;
+}
+
+function saveExtraEmail(contactId, index, value) {
+  const idx = contacts.findIndex(c => c.id === contactId);
+  if (idx < 0) return;
+  const emails = [...(contacts[idx].extra_emails || [])];
+  const trimmed = value.trim();
+  if (emails[index] === trimmed) return;
+  emails[index] = trimmed;
+  contacts[idx] = { ...contacts[idx], extra_emails: emails };
+  syncContact(contacts[idx]);
+}
+
+function removeExtraEmail(contactId, index) {
+  const idx = contacts.findIndex(c => c.id === contactId);
+  if (idx < 0) return;
+  const emails = [...(contacts[idx].extra_emails || [])];
+  emails.splice(index, 1);
+  contacts[idx] = { ...contacts[idx], extra_emails: emails };
+  renderDetail();
+  syncContact(contacts[idx]);
+}
+
+function addExtraEmailInput(contactId) {
+  const idx = contacts.findIndex(c => c.id === contactId);
+  if (idx < 0) return;
+  contacts[idx] = { ...contacts[idx], extra_emails: [...(contacts[idx].extra_emails || []), ''] };
+  renderDetail();
+  setTimeout(() => {
+    const inputs = document.querySelectorAll('.np-extra-email-row input');
+    if (inputs.length) inputs[inputs.length - 1].focus();
+  }, 50);
 }
 
 function saveContactField(contactId, field, value) {
@@ -3173,6 +3299,7 @@ function saveNote(contactId, text) {
 function selectArtist(id) {
   selectedId = id;
   selectedContactId = null;
+  contactEditMode = false;
   wsStatusFilter = 'all';
   wsTab = 'contacts';
   archivedExpanded = false;
@@ -3774,6 +3901,10 @@ document.addEventListener('click', e => {
       renderList();
       renderDetail();
     }
+  }
+  else if (action === 'toggle-contact-edit') {
+    contactEditMode = !contactEditMode;
+    renderDetail();
   }
   else if (action === 'toggle-brief-filter') { briefFilterActive = !briefFilterActive; render(); }
   else if (action === 'toggle-archived-expanded') { archivedExpanded = !archivedExpanded; renderDetail(); }
