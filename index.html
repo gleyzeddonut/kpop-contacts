@@ -3648,13 +3648,90 @@ async function _processParsedBrief(parsed) {
     }
   }
 
+  // Auto-create contacts from brief contacts list
+  const parsedContacts = Array.isArray(parsed.contacts) ? parsed.contacts : [];
+  const allBriefArtistIds = briefArtists
+    .map(ba => matchArtistByName(ba.name))
+    .filter(Boolean)
+    .map(a => a.id);
+  let newContactCount = 0;
+
+  for (const pc of parsedContacts) {
+    if (!pc.email) continue;
+    const email = pc.email.toLowerCase().trim();
+
+    if (!pc.name) {
+      // Email-only: create if not already in any contact's emails
+      const exists = contacts.some(c => emailsOf(c).includes(email));
+      if (!exists) {
+        const nc = {
+          id: uid(),
+          list_id: currentListId,
+          label: label || '',
+          artist_ids: allBriefArtistIds,
+          name: '',
+          role: pc.role || '',
+          email: pc.email.trim(),
+          phone: '',
+          social: '',
+          status: 'cold',
+          notes_log: [],
+          extra_emails: [],
+        };
+        contacts.push(nc);
+        syncContact(nc);
+        newContactCount++;
+      }
+    } else {
+      // Name + email: check email first (skip if any contact already has it)
+      const byEmail = contacts.some(c => emailsOf(c).includes(email));
+      if (byEmail) continue;
+
+      // Check name within same label
+      const byNameIdx = contacts.findIndex(c =>
+        c.label === (label || '') &&
+        (c.name || '').toLowerCase() === pc.name.toLowerCase()
+      );
+      if (byNameIdx >= 0) {
+        // Name exists but email isn't on it — add to extra_emails
+        const emails = [...(contacts[byNameIdx].extra_emails || [])];
+        if (!emailsOf(contacts[byNameIdx]).includes(email)) {
+          emails.push(pc.email.trim());
+          contacts[byNameIdx] = { ...contacts[byNameIdx], extra_emails: emails };
+          syncContact(contacts[byNameIdx]);
+        }
+      } else {
+        // New person — create contact
+        const nc = {
+          id: uid(),
+          list_id: currentListId,
+          label: label || '',
+          artist_ids: allBriefArtistIds,
+          name: pc.name,
+          role: pc.role || '',
+          email: pc.email.trim(),
+          phone: '',
+          social: '',
+          status: 'cold',
+          notes_log: [],
+          extra_emails: [],
+        };
+        contacts.push(nc);
+        syncContact(nc);
+        newContactCount++;
+      }
+    }
+  }
+
   render();
   if (errors.length > 0) {
     toast(`Imported ${importedCount} briefs · ${errors.length} failed`, true);
   } else {
-    const contactNote = matchedContactIds.length > 0
-      ? ` · ${matchedContactIds.length} contact${matchedContactIds.length !== 1 ? 's' : ''} matched`
-      : '';
+    const contactNote = newContactCount > 0
+      ? ` · ${newContactCount} new contact${newContactCount !== 1 ? 's' : ''} added`
+      : matchedContactIds.length > 0
+        ? ` · ${matchedContactIds.length} contact${matchedContactIds.length !== 1 ? 's' : ''} matched`
+        : '';
     toast(`Brief imported: ${importedCount} artist${importedCount !== 1 ? 's' : ''}${contactNote}`);
   }
 }

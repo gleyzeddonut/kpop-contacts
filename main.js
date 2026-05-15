@@ -311,6 +311,7 @@ async function parseBriefPdf(filePath) {
 {
   "label": "string",
   "submission_emails": ["string"],
+  "contacts": [{ "name": "string or null", "email": "string", "role": "string or null" }],
   "artists": [
     {
       "name": "string",
@@ -332,6 +333,7 @@ async function parseBriefPdf(filePath) {
 Rules:
 - label: the issuing label name (e.g. "SM Entertainment").
 - submission_emails: all email addresses from the cover/intro page.
+- contacts: named people listed as submission contacts or "who to contact." Include email. name and role are null if not stated. Omit entries with no email.
 - artists: one entry per artist section in the PDF.
 - deadline: extract as-is ("ASAP", "By May 8th", "early June"). null if not stated.
 - general_direction: the [General Direction] block if present, else null.
