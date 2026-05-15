@@ -304,6 +304,35 @@
     box-shadow: 0 0 5px rgba(168, 85, 247, 0.7);
     pointer-events: none;
   }
+  #list-filter-bar {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--bg);
+    padding: 4px 2px 2px;
+  }
+  .brief-filter-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 9px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    padding: 3px 8px;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: color 0.1s, border-color 0.1s, background 0.1s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .brief-filter-toggle.on {
+    background: rgba(168, 85, 247, 0.15);
+    border-color: rgba(168, 85, 247, 0.5);
+    color: #c084fc;
+  }
 
 
 
@@ -1696,6 +1725,7 @@
 
   <!-- ARTIST LIST -->
   <main class="artist-list">
+    <div id="list-filter-bar"></div>
     <div id="artist-cards"></div>
   </main>
 
@@ -2447,6 +2477,7 @@ function getFiltered() {
   const filtered = artists.filter(a => {
     if (a._scanning) return true;
     if (activeLabel !== 'all' && normalizeLabel(a.label) !== activeLabel) return false;
+    if (briefFilterActive && !briefs.some(b => b.artist_id === a.id)) return false;
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return a.name.toLowerCase().includes(q)
@@ -2513,6 +2544,14 @@ function artistStatusDot(artistId) {
 }
 
 function renderList() {
+  // Render filter bar
+  const filterBar = document.getElementById('list-filter-bar');
+  if (filterBar) {
+    filterBar.innerHTML = briefs.length > 0
+      ? `<button class="brief-filter-toggle ${briefFilterActive ? 'on' : ''}" data-action="toggle-brief-filter">◈ Briefs</button>`
+      : '';
+  }
+
   const list = getFiltered();
 
   const cardsEl = document.getElementById('artist-cards');
@@ -3497,6 +3536,7 @@ document.addEventListener('click', e => {
   const {action} = el.dataset;
   if (action === 'select')              selectArtist(el.dataset.id);
   else if (action === 'filter')         setLabel(el.dataset.label);
+  else if (action === 'toggle-brief-filter') { briefFilterActive = !briefFilterActive; render(); }
   else if (action === 'scan-web')       scanWeb(el.dataset.id);
   else if (action === 'edit-artist')    openArtistModal(el.dataset.id);
   else if (action === 'delete-artist')  confirmDelete('artist', el.dataset.id);
