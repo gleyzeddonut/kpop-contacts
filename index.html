@@ -2536,6 +2536,23 @@ function getFiltered() {
   return getSorted(filtered);
 }
 
+function emailsOf(c) {
+  return [c.email, ...(c.extra_emails || [])].map(e => (e || '').toLowerCase()).filter(Boolean);
+}
+
+function getFilteredContacts() {
+  return contacts.filter(c => {
+    if (activeLabel !== 'all' && normalizeLabel(c.label) !== activeLabel) return false;
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (c.name || '').toLowerCase().includes(q)
+      || (c.role || '').toLowerCase().includes(q)
+      || (c.email || '').toLowerCase().includes(q)
+      || (c.extra_emails || []).some(e => e.toLowerCase().includes(q))
+      || (c.label || '').toLowerCase().includes(q);
+  }).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+}
+
 function getLabels() {
   const map = {};
   artists.forEach(a => {
