@@ -323,7 +323,7 @@ Return ONLY the JSON object. No markdown, no code fences, no explanation.`
   briefProgress(apiKey ? 'Calling Anthropic directly…' : 'Calling via proxy…')
   const data = await (apiKey ? callClaudeDirect({
     model: 'claude-sonnet-4-6',
-    max_tokens: 4096,
+    max_tokens: 8192,
     messages: [{
       role: 'user',
       content: [
@@ -333,7 +333,7 @@ Return ONLY the JSON object. No markdown, no code fences, no explanation.`
     }],
   }, apiKey) : callClaude({
     model: 'claude-sonnet-4-6',
-    max_tokens: 4096,
+    max_tokens: 8192,
     messages: [{
       role: 'user',
       content: [
