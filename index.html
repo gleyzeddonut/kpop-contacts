@@ -265,6 +265,7 @@
     font-size: 8px;
     font-weight: 700;
     color: white;
+    position: relative;
   }
   .artist-row-info {
     flex: 1;
@@ -290,6 +291,18 @@
     height: 6px;
     border-radius: 50%;
     flex-shrink: 0;
+  }
+  .artist-brief-dot {
+    position: absolute;
+    top: -1px;
+    right: -1px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #a855f7;
+    border: 1.5px solid var(--bg);
+    box-shadow: 0 0 5px rgba(168, 85, 247, 0.7);
+    pointer-events: none;
   }
 
 
@@ -2533,9 +2546,13 @@ function renderList() {
     const dragAttrs = sortMode === 'custom'
       ? `draggable="true" ondragstart="dragStart(event,'${h(a.id)}')" ondragover="dragOver(event,'${h(a.id)}')" ondrop="dragDrop(event,'${h(a.id)}')" ondragend="dragEnd()"`
       : '';
+    const hasActiveBrief = briefs.some(b => b.artist_id === a.id);
     return `
       <button class="artist-row ${selectedId === a.id ? 'active' : ''}" data-action="select" data-id="${h(a.id)}" ${dragAttrs}>
-        <div class="artist-row-avatar" style="${avatarStyle}">${initials(a.label ? normalizeLabel(a.label) : a.name)}</div>
+        <div class="artist-row-avatar" style="${avatarStyle}">
+          ${initials(a.label ? normalizeLabel(a.label) : a.name)}
+          ${hasActiveBrief ? '<div class="artist-brief-dot"></div>' : ''}
+        </div>
         <div class="artist-row-info">
           <div class="artist-row-name">${h(a.name)}</div>
         </div>
