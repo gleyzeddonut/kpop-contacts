@@ -2253,6 +2253,8 @@ let archivedBriefs = [];     // archived-but-not-yet-deleted briefs
 let wsTab = 'contacts';      // 'contacts' | 'briefs'
 let briefFilterActive = false; // filter artist list to artists with active briefs
 let archivedExpanded = false;  // archived section expanded in briefs tab
+let contactsViewActive = false; // switches middle column to contact list
+let contactEditMode = false;    // notes panel edit vs read-only
 let selectedContactId = null; // contact whose notes panel is open
 
 // ── Scan queue ──
@@ -2297,12 +2299,15 @@ async function loadListArtists(listId) {
     archivedBriefs = survivingBriefs.filter(b => !!b.archived_at);
     briefFilterActive = false;
     archivedExpanded = false;
+    contactsViewActive = false;
+    contactEditMode = false;
 
     contacts = loadedContacts.map(c => ({
       ...c,
       status: c.status || 'cold',
       notes_log: Array.isArray(c.notes_log) ? c.notes_log :
         (c.notes ? [{ date: new Date().toISOString().slice(0,10), text: c.notes }] : []),
+      extra_emails: Array.isArray(c.extra_emails) ? c.extra_emails : [],
     }));
     await migrateEmbeddedContacts();
     render();
