@@ -2198,7 +2198,27 @@ async function loadListArtists(listId) {
       window.kc.getBriefs ? window.kc.getBriefs(listId) : Promise.resolve([]),
     ]);
     artists = loadedArtists;
-    briefs = loadedBriefs;
+
+    // Archival pass: stamp newly-expired briefs, delete very old ones
+    const twoMonthsAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+    const nowIso = new Date().toISOString();
+    const survivingBriefs = [];
+    for (const brief of loadedBriefs) {
+      if (brief.archived_at && new Date(brief.archived_at) < twoMonthsAgo) {
+        window.kc.deleteBrief(brief.id); // fire and forget
+        continue;
+      }
+      if (!brief.archived_at && shouldArchive(brief)) {
+        brief.archived_at = nowIso;
+        window.kc.upsertBrief(listId, brief); // fire and forget
+      }
+      survivingBriefs.push(brief);
+    }
+    briefs = survivingBriefs.filter(b => !b.archived_at);
+    archivedBriefs = survivingBriefs.filter(b => !!b.archived_at);
+    briefFilterActive = false;
+    archivedExpanded = false;
+
     contacts = loadedContacts.map(c => ({
       ...c,
       status: c.status || 'cold',
