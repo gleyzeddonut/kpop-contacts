@@ -278,11 +278,33 @@ function briefProgress(msg) {
   }
 }
 
+// Extract hyperlink URIs from raw PDF bytes (URI annotation metadata, not visible text)
+function extractPdfUris(buffer) {
+  const MUSIC_HOSTS = ['youtube.com/watch', 'youtu.be/', 'open.spotify.com/track', 'open.spotify.com/album',
+    'open.spotify.com/playlist', 'soundcloud.com', 'music.apple.com', 's.disco.ac', 'untitled.stream',
+    'somespecialmagic.com']
+  const raw = buffer.toString('latin1')
+  const uris = []
+  const re = /\/URI\s*\(([^)]+)\)/g
+  let m
+  while ((m = re.exec(raw)) !== null) {
+    const u = m[1].trim()
+    if (MUSIC_HOSTS.some(h => u.includes(h))) uris.push(u)
+  }
+  return [...new Set(uris)]
+}
+
 // ── Claude API: parse a brief PDF ──
 async function parseBriefPdf(filePath) {
   const buffer = fs.readFileSync(filePath)
   briefProgress(`Read file: ${filePath} (${(buffer.length / 1024).toFixed(0)} KB)`)
   const base64 = buffer.toString('base64')
+
+  const musicUris = extractPdfUris(buffer)
+  const uriHint = musicUris.length > 0
+    ? `\n\nThe following music/reference URLs were extracted from PDF hyperlink annotations (not visible as text). Match them to the reference entries you find in each artist section:\n${musicUris.join('\n')}`
+    : ''
+
   briefProgress(`Encoded to base64 (${(base64.length / 1024).toFixed(0)} KB) — sending to Claude…`)
 
   const prompt = `Extract all brief information from this PDF and return valid JSON matching this schema exactly:
@@ -316,8 +338,8 @@ Rules:
 - tags: hashtags found in the track type heading (e.g. #GenZ_Energy). Empty array if none.
 - wants: bullet points describing what they want. Also include items under "Please include:".
 - avoids: bullet points under "Please avoid:" or explicit negations in direction text.
-- references: YouTube/music URLs with their track title. Empty array if "No specific references provided".
-Return ONLY the JSON object. No markdown, no code fences, no explanation.`
+- references: song/music references for each track type. Include any reference that has or can be matched to a URL. Use the extracted hyperlink URLs provided below to supply the url field — match each URL to the reference text near it in the PDF. If a reference has no matchable URL, still include it with url set to "". Empty array only if truly no references exist.
+Return ONLY the JSON object. No markdown, no code fences, no explanation.${uriHint}`
 
   const apiKey = getStoredApiKey()
   briefProgress(apiKey ? 'Calling Anthropic directly…' : 'Calling via proxy…')
