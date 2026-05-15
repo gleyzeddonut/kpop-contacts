@@ -3219,16 +3219,25 @@ async function _processParsedBrief(parsed) {
   }
 }
 
+function setBriefBtnLoading(loading) {
+  const btn = document.getElementById('import-brief-btn');
+  if (!btn) return;
+  btn.disabled = loading;
+  btn.textContent = loading ? 'Reading brief…' : 'Import Brief';
+}
+
 async function importBriefPdf() {
   if (!currentListId) { toast('Open a list first', true); return; }
-  toast('Importing brief PDF…');
+  setBriefBtnLoading(true);
   let parsed;
   try {
     parsed = await window.kc.importBriefPdf();
   } catch (err) {
     toast('Import failed: ' + err.message, true);
+    setBriefBtnLoading(false);
     return;
   }
+  setBriefBtnLoading(false);
   if (!parsed) return;
   await _processParsedBrief(parsed);
 }
@@ -3414,14 +3423,16 @@ document.addEventListener('drop', async e => {
   if (!file) return;
   e.preventDefault();
   if (!currentListId) { toast('Open a list first', true); return; }
-  toast('Importing brief PDF…');
+  setBriefBtnLoading(true);
   let parsed;
   try {
     parsed = await window.kc.importBriefPdfFromPath(window.kc.getPathForFile(file));
   } catch (err) {
     toast('Import failed: ' + err.message, true);
+    setBriefBtnLoading(false);
     return;
   }
+  setBriefBtnLoading(false);
   if (!parsed) return;
   await _processParsedBrief(parsed);
 });
