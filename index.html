@@ -220,6 +220,20 @@
     overflow-y: auto;
   }
 
+  .sidebar-contacts-btn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 12px;
+    border-top: 1px solid var(--border);
+    font-size: 10px;
+    color: var(--text-dim);
+    cursor: pointer;
+    user-select: none;
+    flex-shrink: 0;
+  }
+  .sidebar-contacts-btn:hover { color: #a855f7; }
+  .sidebar-contacts-btn.active { color: #a855f7; background: rgba(168, 85, 247, 0.12); }
 
   /* ── ARTIST LIST ── */
   .artist-list {
@@ -1757,6 +1771,13 @@
     </div>
     <div class="sidebar-section">Labels</div>
     <div id="label-list"></div>
+    <div id="sidebar-contacts-btn" class="sidebar-contacts-btn" data-action="toggle-contacts-view">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <circle cx="6" cy="4" r="2.2" stroke="currentColor" stroke-width="1.3"/>
+        <path d="M1.5 10.5c0-2.485 2.015-4.5 4.5-4.5s4.5 2.015 4.5 4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+      All Contacts
+    </div>
   </aside>
 
   <!-- ARTIST LIST -->
@@ -2588,6 +2609,8 @@ function renderSidebar() {
         <span class="label-count">${cnt}</span>
       </div>`).join('')}
   `;
+  const btn = document.getElementById('sidebar-contacts-btn');
+  if (btn) btn.classList.toggle('active', contactsViewActive);
 }
 
 function artistStatusDot(artistId) {
@@ -3640,6 +3663,12 @@ document.addEventListener('click', e => {
   if (action === 'select')              selectArtist(el.dataset.id);
   else if (action === 'filter')         setLabel(el.dataset.label);
   else if (action === 'open-url')       { e.preventDefault(); if (el.dataset.url) window.open(el.dataset.url); }
+  else if (action === 'toggle-contacts-view') {
+    contactsViewActive = !contactsViewActive;
+    if (contactsViewActive) { selectedId = null; contactEditMode = false; }
+    selectedContactId = null;
+    render();
+  }
   else if (action === 'toggle-brief-filter') { briefFilterActive = !briefFilterActive; render(); }
   else if (action === 'toggle-archived-expanded') { archivedExpanded = !archivedExpanded; renderDetail(); }
   else if (action === 'scan-web')       scanWeb(el.dataset.id);
