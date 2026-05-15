@@ -318,6 +318,51 @@
     box-shadow: 0 0 5px rgba(168, 85, 247, 0.7);
     pointer-events: none;
   }
+  .contact-list-header {
+    padding: 6px 10px 5px;
+    border-bottom: 1px solid var(--border);
+    font-size: 10px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 2;
+  }
+  .contact-list-header .cl-title { color: #a855f7; font-weight: 600; }
+  .contact-list-header .cl-count { font-size: 9px; color: var(--text-muted); font-family: var(--font-mono); }
+  .cl-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    cursor: pointer;
+    user-select: none;
+  }
+  .cl-row:hover { background: rgba(255,255,255,0.03); }
+  .cl-row.active { background: var(--surface); }
+  .cl-avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 7px;
+    font-weight: 700;
+    color: white;
+    background: linear-gradient(135deg, #5c2d91, #a855f7);
+  }
+  .cl-info { flex: 1; min-width: 0; }
+  .cl-name { font-size: 10px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cl-sub { font-size: 9px; color: var(--text-muted); font-family: var(--font-mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cl-status-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
   #list-filter-bar {
     position: sticky;
     top: 0;
@@ -2625,8 +2670,40 @@ function artistStatusDot(artistId) {
 }
 
 function renderList() {
-  // Render filter bar
   const filterBar = document.getElementById('list-filter-bar');
+  const cardsEl = document.getElementById('artist-cards');
+
+  if (contactsViewActive) {
+    if (filterBar) filterBar.innerHTML = '';
+    cardsEl.className = '';
+    const filtered = getFilteredContacts();
+    const statusColors = { cold: '#6a8aff', reached_out: '#30D158', in_convo: '#FF9500', placed: '#BF5AF2' };
+    const labelScope = activeLabel !== 'all' ? `${activeLabel} · ` : '';
+    cardsEl.innerHTML = `
+      <div class="contact-list-header">
+        <span class="cl-title">Contacts</span>
+        <span class="cl-count">${h(labelScope)}${filtered.length}</span>
+      </div>
+      ${filtered.length === 0
+        ? `<div class="empty-list"><div class="ei">◈</div><p>no contacts${searchQuery ? ' found' : ''}</p></div>`
+        : filtered.map(c => {
+            const av = (c.name || '?').split(' ').map(w => w[0] || '').join('').slice(0, 2).toUpperCase();
+            const dotColor = statusColors[c.status] || '#3a3a48';
+            return `<div class="cl-row ${selectedContactId === c.id ? 'active' : ''}"
+                         data-action="select-contact-global" data-contact-id="${h(c.id)}">
+              <div class="cl-avatar">${h(av)}</div>
+              <div class="cl-info">
+                <div class="cl-name">${h(c.name || 'Unnamed')}</div>
+                <div class="cl-sub">${h(c.role || c.label || '')}</div>
+              </div>
+              <div class="cl-status-dot" style="background:${dotColor}"></div>
+            </div>`;
+          }).join('')
+      }`;
+    return;
+  }
+
+  // Artist list mode
   if (filterBar) {
     filterBar.innerHTML = briefs.length > 0
       ? `<button class="brief-filter-toggle ${briefFilterActive ? 'on' : ''}" data-action="toggle-brief-filter">◈ Briefs</button>`
@@ -2635,7 +2712,6 @@ function renderList() {
 
   const list = getFiltered();
 
-  const cardsEl = document.getElementById('artist-cards');
   cardsEl.className = sortMode === 'custom' ? 'sort-custom' : '';
 
   if (!list.length) {
@@ -3668,6 +3744,15 @@ document.addEventListener('click', e => {
     if (contactsViewActive) { selectedId = null; contactEditMode = false; }
     selectedContactId = null;
     render();
+  }
+  else if (action === 'select-contact-global') {
+    const contactId = el.dataset.contactId;
+    if (contactId) {
+      selectedContactId = selectedContactId === contactId ? null : contactId;
+      contactEditMode = false;
+      renderList();
+      renderDetail();
+    }
   }
   else if (action === 'toggle-brief-filter') { briefFilterActive = !briefFilterActive; render(); }
   else if (action === 'toggle-archived-expanded') { archivedExpanded = !archivedExpanded; renderDetail(); }
