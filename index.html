@@ -220,6 +220,29 @@
     overflow-y: auto;
   }
 
+  .label-item.hidden-label { opacity: 0.4; }
+  .label-item.hidden-label .label-name { text-decoration: line-through; }
+
+  .label-ctx-menu {
+    position: fixed;
+    z-index: 10000;
+    background: #1e1e2c;
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    padding: 3px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+    min-width: 130px;
+  }
+  .label-ctx-item {
+    padding: 6px 10px;
+    font-size: 11px;
+    color: var(--text);
+    border-radius: 4px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .label-ctx-item:hover { background: var(--card); }
+
   .sidebar-contacts-btn {
     display: flex;
     align-items: center;
@@ -1894,6 +1917,11 @@
 
 </div>
 
+<!-- LABEL CONTEXT MENU -->
+<div id="label-ctx-menu" class="label-ctx-menu" style="display:none">
+  <div class="label-ctx-item" id="label-ctx-action"></div>
+</div>
+
 <!-- MODAL: Artist -->
 <div class="modal-overlay" id="artist-modal" onclick="handleOverlayClick(event,'artist-modal')">
   <div class="modal">
@@ -2368,6 +2396,7 @@ let archivedBriefs = [];     // archived-but-not-yet-deleted briefs
 let wsTab = 'contacts';      // 'contacts' | 'briefs'
 let briefFilterActive = false; // filter artist list to artists with active briefs
 let archivedExpanded = false;  // archived section expanded in briefs tab
+let hiddenLabels = new Set(JSON.parse(localStorage.getItem('kpc-hidden-labels') || '[]'));
 let contactsViewActive = false; // switches middle column to contact list
 let contactEditMode = false;    // notes panel edit vs read-only
 let selectedContactId = null; // contact whose notes panel is open
@@ -2633,6 +2662,7 @@ function getFiltered() {
   const filtered = artists.filter(a => {
     if (a._scanning) return true;
     if (activeLabel !== 'all' && normalizeLabel(a.label) !== activeLabel) return false;
+    if (hiddenLabels.has(normalizeLabel(a.label))) return false;
     if (briefFilterActive && !briefs.some(b => b.artist_id === a.id)) return false;
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
@@ -2698,7 +2728,7 @@ function renderSidebar() {
       <span class="label-count">${artists.length}</span>
     </div>
     ${labels.map(([lbl,cnt]) => `
-      <div class="label-item ${activeLabel===lbl?'active':''}" data-action="filter" data-label="${h(lbl)}">
+      <div class="label-item ${activeLabel===lbl?'active':''} ${hiddenLabels.has(lbl)?'hidden-label':''}" data-action="filter" data-label="${h(lbl)}">
         <span class="label-name">${h(lbl)}</span>
         <span class="label-count">${cnt}</span>
       </div>`).join('')}
@@ -4056,6 +4086,44 @@ document.addEventListener('click', e => {
 document.getElementById('search').addEventListener('input', e => {
   searchQuery = e.target.value;
   render();
+});
+
+// ── Label right-click context menu ──
+const labelCtxMenu = document.getElementById('label-ctx-menu');
+const labelCtxAction = document.getElementById('label-ctx-action');
+let labelCtxTarget = null;
+
+document.getElementById('label-list').addEventListener('contextmenu', e => {
+  const item = e.target.closest('[data-label]');
+  if (!item || item.dataset.label === 'all') return;
+  e.preventDefault();
+  labelCtxTarget = item.dataset.label;
+  const isHidden = hiddenLabels.has(labelCtxTarget);
+  labelCtxAction.textContent = isHidden ? 'Show artists' : 'Hide artists';
+  labelCtxMenu.style.display = 'block';
+  const x = Math.min(e.clientX, window.innerWidth - 160);
+  const y = Math.min(e.clientY, window.innerHeight - 60);
+  labelCtxMenu.style.left = x + 'px';
+  labelCtxMenu.style.top = y + 'px';
+});
+
+labelCtxAction.addEventListener('click', () => {
+  if (!labelCtxTarget) return;
+  if (hiddenLabels.has(labelCtxTarget)) {
+    hiddenLabels.delete(labelCtxTarget);
+  } else {
+    hiddenLabels.add(labelCtxTarget);
+    if (activeLabel === labelCtxTarget) { activeLabel = 'all'; }
+  }
+  localStorage.setItem('kpc-hidden-labels', JSON.stringify([...hiddenLabels]));
+  labelCtxMenu.style.display = 'none';
+  labelCtxTarget = null;
+  render();
+});
+
+document.addEventListener('click', () => { labelCtxMenu.style.display = 'none'; });
+document.addEventListener('contextmenu', e => {
+  if (!e.target.closest('#label-list')) labelCtxMenu.style.display = 'none';
 });
 
 document.addEventListener('keydown', e => {
