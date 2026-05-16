@@ -243,20 +243,46 @@
   }
   .label-ctx-item:hover { background: var(--card); }
 
-  .sidebar-contacts-btn {
+  .sidebar-contacts-btn, .sidebar-briefs-btn {
     display: flex;
     align-items: center;
     gap: 7px;
     padding: 8px 12px;
-    border-top: 1px solid var(--border);
     font-size: 10px;
     color: var(--text-dim);
     cursor: pointer;
     user-select: none;
     flex-shrink: 0;
   }
-  .sidebar-contacts-btn:hover { color: #a855f7; }
-  .sidebar-contacts-btn.active { color: #a855f7; background: rgba(168, 85, 247, 0.12); }
+  .sidebar-contacts-btn, .sidebar-briefs-btn { border-top: 1px solid var(--border); }
+  .sidebar-contacts-btn:hover, .sidebar-briefs-btn:hover { color: #a855f7; }
+  .sidebar-contacts-btn.active, .sidebar-briefs-btn.active { color: #a855f7; background: rgba(168, 85, 247, 0.12); }
+
+  .all-briefs-panel { display: flex; flex-direction: column; height: 100%; }
+  .all-briefs-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px 8px; flex-shrink: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .all-briefs-title { font-size: 11px; font-weight: 700; font-family: var(--font-mono); color: var(--text); }
+  .all-briefs-sort { display: flex; gap: 4px; }
+  .sort-btn {
+    font-size: 9px; font-family: var(--font-mono); font-weight: 700;
+    padding: 2px 7px; border-radius: 6px; border: 1px solid var(--border);
+    background: transparent; color: var(--text-dim); cursor: pointer;
+    -webkit-appearance: none; appearance: none;
+    transition: color 0.1s, border-color 0.1s, background 0.1s;
+  }
+  .sort-btn.active {
+    border-color: rgba(168, 85, 247, 0.5); background: rgba(168, 85, 247, 0.12); color: #c084fc;
+  }
+  .all-briefs-scroll { flex: 1; overflow-y: auto; padding: 12px 16px; }
+  .all-briefs-artist-block { margin-bottom: 20px; }
+  .all-briefs-artist-name {
+    font-size: 10px; font-weight: 700; font-family: var(--font-mono);
+    color: #a855f7; text-transform: uppercase; letter-spacing: 0.05em;
+    margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid rgba(168,85,247,0.2);
+  }
 
   /* ── ARTIST LIST ── */
   .artist-list {
@@ -336,9 +362,9 @@
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: #a855f7;
+    background: #FF2D78;
     border: 1.5px solid var(--bg);
-    box-shadow: 0 0 5px rgba(168, 85, 247, 0.7);
+    box-shadow: 0 0 5px rgba(255, 45, 120, 0.7);
     pointer-events: none;
   }
   .contact-list-header {
@@ -392,6 +418,8 @@
     z-index: 2;
     background: var(--bg);
     padding: 4px 2px 2px;
+    display: flex;
+    justify-content: center;
   }
   .brief-filter-toggle {
     display: inline-flex;
@@ -402,18 +430,24 @@
     font-family: var(--font-mono);
     padding: 3px 8px;
     border-radius: var(--r-sm);
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--text-dim);
+    border: 1px solid rgba(168, 85, 247, 0.35);
+    background: rgba(168, 85, 247, 0.07);
+    color: #a78bca;
     cursor: pointer;
-    transition: color 0.1s, border-color 0.1s, background 0.1s;
+    transition: color 0.1s, border-color 0.1s, background 0.1s, box-shadow 0.1s;
     -webkit-appearance: none;
     appearance: none;
   }
-  .brief-filter-toggle.on {
-    background: rgba(168, 85, 247, 0.15);
-    border-color: rgba(168, 85, 247, 0.5);
+  .brief-filter-toggle:hover {
+    border-color: rgba(168, 85, 247, 0.6);
     color: #c084fc;
+    background: rgba(168, 85, 247, 0.12);
+  }
+  .brief-filter-toggle.on {
+    background: rgba(168, 85, 247, 0.2);
+    border-color: rgba(168, 85, 247, 0.7);
+    color: #d8b4fe;
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.25);
   }
 
 
@@ -433,6 +467,18 @@
     flex: 1;
     overflow: hidden;
     min-width: 0;
+  }
+  .workspace-body.briefs-mode {
+    overflow: visible;
+    flex: unset;
+  }
+  .workspace-body.briefs-mode .workspace-table-area {
+    overflow: visible;
+    flex: unset;
+  }
+  .workspace-body.briefs-mode .briefs-pane {
+    overflow: visible;
+    flex: unset;
   }
   .workspace-table-area {
     flex: 1;
@@ -597,6 +643,14 @@
     color: var(--text);
     font-family: var(--font-mono);
   }
+  .brief-source-artist {
+    font-size: 22px;
+    font-weight: 700;
+    color: #c084fc;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
   .deadline-badge {
     font-size: 9px;
     font-weight: 700;
@@ -613,6 +667,11 @@
     color: var(--text-dim);
     font-family: var(--font-mono);
   }
+  .brief-email-link {
+    cursor: pointer;
+    transition: color 0.1s;
+  }
+  .brief-email-link:hover { color: #a855f7; text-decoration: underline; }
   .brief-section {
     padding: 9px 12px;
     border-bottom: 1px solid var(--border);
@@ -682,14 +741,14 @@
   }
   .ref-pill:hover { border-color: var(--accent); color: var(--accent); }
   .ref-pill-nourl { cursor: default; opacity: 0.6; }
-  .brief-matched-contacts {
-    padding: 7px 12px;
-    background: #0a180a;
-    border-top: 1px solid #1a301a;
-    font-size: 10px;
-    color: var(--green);
-    font-family: var(--font-mono);
+  .ctr-brief-chip {
+    margin-left: 5px;
+    font-size: 9px;
+    color: rgba(168, 85, 247, 0.35);
+    cursor: default;
+    transition: color 0.15s;
   }
+  .contact-table-row:hover .ctr-brief-chip { color: #a855f7; }
   .brief-archived-section {
     margin-top: 12px;
     border-top: 1px solid var(--border);
@@ -994,41 +1053,23 @@
     color: var(--text-muted);
     line-height: 1.5;
   }
-  .np-add-note-btn {
-    height: 32px;
-    border-radius: 7px;
-    border: 1px dashed var(--border);
+  .np-notepad {
+    width: 100%;
     background: transparent;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    font-family: var(--font-display);
-    color: var(--text-dim);
-    cursor: pointer;
-    flex-shrink: 0;
-    margin-top: auto;
-    transition: border-color 0.1s, color 0.1s;
-    width: 100%;
-  }
-  .np-add-note-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-  .np-note-input {
-    width: 100%;
-    background: var(--card);
-    border: 1px solid var(--border-light);
-    border-radius: 6px;
-    color: var(--text);
+    border: none;
+    color: var(--text-muted);
     font-family: var(--font-display);
     font-size: 10px;
-    padding: 8px 10px;
+    padding: 0;
     outline: none;
     resize: none;
-    line-height: 1.5;
-    flex-shrink: 0;
+    line-height: 1.6;
     box-sizing: border-box;
+    min-height: 60px;
+    overflow: hidden;
   }
-  .np-note-input:focus { border-color: var(--accent); }
+  .np-notepad::placeholder { color: var(--text-dim); }
+  .np-notepad:focus { color: var(--text); }
 
   #detail-content {
     flex: 1;
@@ -1888,6 +1929,15 @@
     </div>
     <div class="sidebar-section">Labels</div>
     <div id="label-list"></div>
+    <div id="sidebar-briefs-btn" class="sidebar-briefs-btn" data-action="toggle-briefs-view">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <rect x="1.5" y="1.5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
+        <line x1="3.5" y1="4.5" x2="8.5" y2="4.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+        <line x1="3.5" y1="6.5" x2="7" y2="6.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+        <line x1="3.5" y1="8.5" x2="5.5" y2="8.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+      </svg>
+      All Briefs
+    </div>
     <div id="sidebar-contacts-btn" class="sidebar-contacts-btn" data-action="toggle-contacts-view">
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
         <circle cx="6" cy="4" r="2.2" stroke="currentColor" stroke-width="1.3"/>
@@ -2393,13 +2443,17 @@ let confirmCallback = null;
 let wsStatusFilter = 'all'; // filter pill selection in workspace
 let briefs = [];             // active (non-archived) briefs for current list
 let archivedBriefs = [];     // archived-but-not-yet-deleted briefs
-let wsTab = 'contacts';      // 'contacts' | 'briefs'
+let wsTab = 'briefs';        // 'contacts' | 'briefs'
 let briefFilterActive = false; // filter artist list to artists with active briefs
 let archivedExpanded = false;  // archived section expanded in briefs tab
 let hiddenLabels = new Set(JSON.parse(localStorage.getItem('kpc-hidden-labels') || '[]'));
 let contactsViewActive = false; // switches middle column to contact list
 let contactEditMode = false;    // notes panel edit vs read-only
 let selectedContactId = null; // contact whose notes panel is open
+let briefsViewActive = false;   // all-briefs panel in right column
+let briefsViewSort = 'deadline'; // 'alpha' | 'deadline'
+let briefsViewLabel = 'all';    // independent label filter for all-briefs view
+let contactsViewLabel = 'all';  // independent label filter for contacts view
 
 // ── Scan queue ──
 const scanQueue = [];       // [{placeholderId, name}]
@@ -2445,6 +2499,10 @@ async function loadListArtists(listId) {
     archivedExpanded = false;
     contactsViewActive = false;
     contactEditMode = false;
+    briefsViewActive = false;
+    briefsViewSort = 'deadline';
+    briefsViewLabel = 'all';
+    contactsViewLabel = 'all';
 
     contacts = loadedContacts.map(c => ({
       ...c,
@@ -2686,8 +2744,9 @@ function emailsOf(c) {
 }
 
 function getFilteredContacts() {
+  const contactLabel = contactsViewActive ? contactsViewLabel : activeLabel;
   return contacts.filter(c => {
-    if (activeLabel !== 'all' && normalizeLabel(c.label) !== activeLabel) return false;
+    if (contactLabel !== 'all' && normalizeLabel(c.label) !== contactLabel) return false;
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (c.name || '').toLowerCase().includes(q)
@@ -2713,6 +2772,7 @@ function getLabels() {
 // RENDER
 // ═══════════════════════════════════════════
 function render() {
+  if (window.applyColumns) window.applyColumns();
   renderSidebar();
   renderList();
   renderDetail();
@@ -2722,19 +2782,22 @@ function render() {
 
 function renderSidebar() {
   const labels = getLabels();
+  const viewLabel = briefsViewActive ? briefsViewLabel : contactsViewActive ? contactsViewLabel : activeLabel;
   document.getElementById('label-list').innerHTML = `
-    <div class="label-item ${activeLabel==='all'?'active':''}" data-action="filter" data-label="all">
+    <div class="label-item ${viewLabel==='all'?'active':''}" data-action="filter" data-label="all">
       <span class="label-name">All Artists</span>
       <span class="label-count">${artists.length}</span>
     </div>
     ${labels.map(([lbl,cnt]) => `
-      <div class="label-item ${activeLabel===lbl?'active':''} ${hiddenLabels.has(lbl)?'hidden-label':''}" data-action="filter" data-label="${h(lbl)}">
+      <div class="label-item ${viewLabel===lbl?'active':''} ${hiddenLabels.has(lbl)?'hidden-label':''}" data-action="filter" data-label="${h(lbl)}">
         <span class="label-name">${h(lbl)}</span>
         <span class="label-count">${cnt}</span>
       </div>`).join('')}
   `;
   const btn = document.getElementById('sidebar-contacts-btn');
   if (btn) btn.classList.toggle('active', contactsViewActive);
+  const bbtn = document.getElementById('sidebar-briefs-btn');
+  if (bbtn) bbtn.classList.toggle('active', briefsViewActive);
 }
 
 function artistStatusDot(artistId) {
@@ -2785,7 +2848,7 @@ function renderList() {
   // Artist list mode
   if (filterBar) {
     filterBar.innerHTML = briefs.length > 0
-      ? `<button class="brief-filter-toggle ${briefFilterActive ? 'on' : ''}" data-action="toggle-brief-filter">◈ Briefs</button>`
+      ? `<button class="brief-filter-toggle ${briefFilterActive ? 'on' : ''}" data-action="toggle-brief-filter">Briefs Only</button>`
       : '';
   }
 
@@ -2843,6 +2906,26 @@ function statusLabel(s) {
 function renderDetail() {
   const empty = document.getElementById('detail-empty');
   const content = document.getElementById('detail-content');
+
+  if (briefsViewActive) {
+    empty.style.display = 'none';
+    content.style.display = 'flex';
+    content.style.flexDirection = 'column';
+    content.style.height = '100%';
+    content.innerHTML = `
+      <div class="all-briefs-panel">
+        <div class="all-briefs-header">
+          <span class="all-briefs-title">◈ All Briefs</span>
+          <div class="all-briefs-sort">
+            <button class="sort-btn ${briefsViewSort==='alpha'?'active':''}" data-action="set-briefs-sort" data-sort="alpha">A–Z</button>
+            <button class="sort-btn ${briefsViewSort==='deadline'?'active':''}" data-action="set-briefs-sort" data-sort="deadline">Deadline</button>
+          </div>
+        </div>
+        <div class="all-briefs-scroll" id="all-briefs-scroll"></div>
+      </div>`;
+    renderAllBriefs();
+    return;
+  }
 
   if (contactsViewActive) {
     if (!selectedContactId) {
@@ -2906,12 +2989,16 @@ function renderDetail() {
     ? `<div style="padding:20px 8px;font-size:11px;color:var(--text-dim);font-family:var(--font-mono)">No contacts${wsStatusFilter !== 'all' ? ' with this status' : ' yet'}.</div>`
     : filtered.map((c, i) => {
         const safeStatus = ['cold','reached_out','in_convo','placed'].includes(c.status) ? c.status : 'cold';
+        const sourceBrief = briefs.find(b => (b.matched_contact_ids || []).includes(c.id));
+        const briefChip = sourceBrief
+          ? `<span class="ctr-brief-chip" title="Matched from ${sourceBrief.label || sourceBrief.source_pdf || 'brief'}">◈</span>`
+          : '';
         return `
       <div class="contact-table-row ${selectedContactId===c.id?'selected':''}"
            data-action="select-contact" data-contact-id="${h(c.id)}"
            ondblclick="toggleNotesPanel('${h(c.id)}')">
         <div class="ctr-num">${i+1}</div>
-        <div class="ctr-name">${h(c.name)}</div>
+        <div class="ctr-name">${h(c.name)}${briefChip}</div>
         <div class="ctr-role">${h(c.role||'—')}</div>
         <div class="ctr-email" ${c.email ? `data-action="copy" data-value="${h(c.email)}"` : ''}>${h(c.email||'—')}</div>
         <div><span class="status-badge ${safeStatus}">${statusLabel(safeStatus)}</span></div>
@@ -2939,7 +3026,7 @@ function renderDetail() {
       </div>
       ${wsTab==='contacts' ? `<div class="ws-status-pills" style="margin-top:8px">${pillsHTML}</div>` : ''}
     </div>
-    <div class="workspace-body">
+    <div class="workspace-body${wsTab === 'briefs' ? ' briefs-mode' : ''}">
       ${wsTab === 'briefs' ? `
         <div class="workspace-table-area" id="briefs-pane"></div>
       ` : `
@@ -2984,6 +3071,107 @@ function deadlineBadgeClass(deadline) {
   return 'asap';
 }
 
+function trackTypeCardHTML(tt) {
+  const wants = (tt.wants || []).map(w => `· ${h(w)}`).join('<br>');
+  const avoids = (tt.avoids || []).map(av => `✕ ${h(av)}`).join('<br>');
+  const refs = (tt.references || [])
+    .filter(r => r.title || r.url)
+    .map(r => {
+      const hasUrl = r.url && (r.url.startsWith('https://') || r.url.startsWith('http://'));
+      return hasUrl
+        ? `<a class="ref-pill" href="#" data-action="open-url" data-url="${h(r.url)}">▶ ${h(r.title || r.url)}</a>`
+        : `<span class="ref-pill ref-pill-nourl">${h(r.title)}</span>`;
+    }).join('');
+  const tagsLine = (tt.tags || []).length > 0
+    ? `<div style="font-size:9px;color:var(--text-dim);font-family:var(--font-mono);margin-bottom:4px">${tt.tags.map(t => h(t)).join(' ')}</div>`
+    : '';
+  return `<div class="track-type-card"><div class="track-type-name">${h(tt.name || 'Track Type')}</div>${tagsLine}${wants ? `<div class="track-type-wants">${wants}</div>` : ''}${avoids ? `<div class="track-type-avoids">${avoids}</div>` : ''}${refs ? `<div class="track-type-refs">${refs}</div>` : ''}</div>`;
+}
+
+function deadlineSortKey(deadline) {
+  if (!deadline) return Number.MAX_SAFE_INTEGER;
+  const d = deadline.toUpperCase();
+  if (d.includes('ASAP')) return -1;
+  const parsed = new Date(deadline.replace(/By\s*/i, '').trim());
+  if (!isNaN(parsed)) return parsed.getTime();
+  return 0; // unparseable → near ASAP
+}
+
+function renderAllBriefs() {
+  const pane = document.getElementById('all-briefs-scroll');
+  if (!pane) return;
+
+  const all = briefsViewLabel === 'all'
+    ? [...briefs]
+    : briefs.filter(b => normalizeLabel(b.label) === briefsViewLabel);
+  if (all.length === 0) {
+    pane.innerHTML = `<div style="text-align:center;color:var(--text-dim);font-size:11px;padding:40px 0">No active briefs.</div>`;
+    return;
+  }
+
+  if (briefsViewSort === 'deadline') {
+    all.sort((a, b) => deadlineSortKey(a.deadline) - deadlineSortKey(b.deadline));
+    pane.innerHTML = all.map(brief => {
+      const artist = artists.find(x => x.id === brief.artist_id);
+      const artistName = artist?.name || 'Unknown Artist';
+      return briefCardHTML(brief, artistName);
+    }).join('');
+  } else {
+    // alpha — group by artist name
+    const byArtist = new Map();
+    all.forEach(brief => {
+      const artist = artists.find(x => x.id === brief.artist_id);
+      const name = artist?.name || 'Unknown Artist';
+      if (!byArtist.has(name)) byArtist.set(name, []);
+      byArtist.get(name).push(brief);
+    });
+    const sorted = [...byArtist.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+    pane.innerHTML = sorted.map(([name, brs]) => `
+      <div class="all-briefs-artist-block">
+        <div class="all-briefs-artist-name">${h(name)}</div>
+        ${brs.map(b => briefCardHTML(b, name)).join('')}
+      </div>`).join('');
+  }
+}
+
+function briefEmailsHTML(submissionEmails) {
+  const emails = (submissionEmails || []).slice(0, 3);
+  if (!emails.length) return '';
+  const parts = emails.map(e => {
+    const username = h(e.split('@')[0]);
+    const c = contacts.find(ct => emailsOf(ct).includes(e.toLowerCase()));
+    return c
+      ? `<span class="brief-email-link" data-action="goto-contact" data-contact-id="${h(c.id)}">${username}</span>`
+      : `<span>${username}</span>`;
+  }).join(' · ');
+  return `<span class="brief-emails">${parts}</span>`;
+}
+
+function briefCardHTML(brief, artistNameOverride) {
+  const badgeClass = deadlineBadgeClass(brief.deadline);
+  const deadlineBadge = badgeClass && brief.deadline
+    ? `<span class="deadline-badge ${badgeClass}">${h(brief.deadline)}</span>`
+    : '';
+  const emailsHTML = briefEmailsHTML(brief.submission_emails);
+  const labelHTML = artistNameOverride
+    ? `<span class="brief-source-artist">${h(artistNameOverride)}</span>`
+    : `<span class="brief-source">${h(brief.source_pdf || brief.label || 'Brief')}</span>`;
+  const directionHTML = brief.general_direction
+    ? `<div class="brief-section"><div class="brief-section-label">General Direction</div><div class="brief-direction-text">${h(brief.general_direction)}</div></div>`
+    : '';
+  const trackTypes = Array.isArray(brief.track_types) ? brief.track_types : [];
+  const trackTypesHTML = trackTypes.length === 0 ? '' : `
+    <div class="brief-section">
+      <div class="brief-section-label">Track Types</div>
+      ${trackTypes.map(trackTypeCardHTML).join('')}
+    </div>`;
+  return `
+    <div class="brief-card">
+      <div class="brief-card-header">${labelHTML}${deadlineBadge}${emailsHTML}</div>
+      ${directionHTML}${trackTypesHTML}
+    </div>`;
+}
+
 function shouldArchive(brief) {
   const oneMonthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   if (!brief.deadline) return new Date(brief.created_at) < oneMonthAgo;
@@ -3013,9 +3201,7 @@ function renderBriefsTab(artist) {
     const deadlineBadge = badgeClass && brief.deadline
       ? `<span class="deadline-badge ${badgeClass}">${h(brief.deadline)}</span>`
       : '';
-    const emailPreview = (brief.submission_emails || []).slice(0, 3)
-      .map(e => e.split('@')[0]).join(' · ');
-    const emailsHTML = emailPreview ? `<span class="brief-emails">${h(emailPreview)}</span>` : '';
+    const emailsHTML = briefEmailsHTML(brief.submission_emails);
     const directionHTML = brief.general_direction
       ? `<div class="brief-section"><div class="brief-section-label">General Direction</div><div class="brief-direction-text">${h(brief.general_direction)}</div></div>`
       : '';
@@ -3023,35 +3209,15 @@ function renderBriefsTab(artist) {
     const trackTypesHTML = trackTypes.length === 0 ? '' : `
       <div class="brief-section">
         <div class="brief-section-label">Track Types</div>
-        ${trackTypes.map(tt => {
-          const wants = (tt.wants || []).map(w => `· ${h(w)}`).join('<br>');
-          const avoids = (tt.avoids || []).map(av => `✕ ${h(av)}`).join('<br>');
-          const refs = (tt.references || [])
-            .filter(r => r.title || r.url)
-            .map(r => {
-              const hasUrl = r.url && (r.url.startsWith('https://') || r.url.startsWith('http://'));
-              return hasUrl
-                ? `<a class="ref-pill" href="#" data-action="open-url" data-url="${h(r.url)}">▶ ${h(r.title || r.url)}</a>`
-                : `<span class="ref-pill ref-pill-nourl">${h(r.title)}</span>`;
-            })
-            .join('');
-          const tagsLine = (tt.tags || []).length > 0
-            ? `<div style="font-size:9px;color:var(--text-dim);font-family:var(--font-mono);margin-bottom:4px">${tt.tags.map(t => h(t)).join(' ')}</div>`
-            : '';
-          return `<div class="track-type-card"><div class="track-type-name">${h(tt.name || 'Track Type')}</div>${tagsLine}${wants ? `<div class="track-type-wants">${wants}</div>` : ''}${avoids ? `<div class="track-type-avoids">${avoids}</div>` : ''}${refs ? `<div class="track-type-refs">${refs}</div>` : ''}</div>`;
-        }).join('')}
+        ${trackTypes.map(trackTypeCardHTML).join('')}
       </div>`;
-    const matchedIds = brief.matched_contact_ids || [];
-    const matchedBanner = matchedIds.length > 0
-      ? `<div class="brief-matched-contacts">✓ ${matchedIds.length} contact${matchedIds.length !== 1 ? 's' : ''} matched from brief emails</div>`
-      : '';
     return `
       <div class="brief-card">
         <div class="brief-card-header">
           <span class="brief-source">${h(brief.source_pdf || brief.label || 'Brief')}</span>
           ${deadlineBadge}${emailsHTML}
         </div>
-        ${directionHTML}${trackTypesHTML}${matchedBanner}
+        ${directionHTML}${trackTypesHTML}
       </div>`;
   }).join('');
 
@@ -3062,9 +3228,7 @@ function renderBriefsTab(artist) {
           const archivedDate = brief.archived_at
             ? new Date(brief.archived_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
             : '';
-          const emailPreview = (brief.submission_emails || []).slice(0, 3)
-            .map(e => e.split('@')[0]).join(' · ');
-          const emailsHTML = emailPreview ? `<span class="brief-emails">${h(emailPreview)}</span>` : '';
+          const emailsHTML = briefEmailsHTML(brief.submission_emails);
           const directionHTML = brief.general_direction
             ? `<div class="brief-section"><div class="brief-section-label">General Direction</div><div class="brief-direction-text">${h(brief.general_direction)}</div></div>`
             : '';
@@ -3072,23 +3236,7 @@ function renderBriefsTab(artist) {
           const trackTypesHTML = trackTypes.length === 0 ? '' : `
             <div class="brief-section">
               <div class="brief-section-label">Track Types</div>
-              ${trackTypes.map(tt => {
-                const wants = (tt.wants || []).map(w => `· ${h(w)}`).join('<br>');
-                const avoids = (tt.avoids || []).map(av => `✕ ${h(av)}`).join('<br>');
-                const refs = (tt.references || [])
-                  .filter(r => r.title || r.url)
-                  .map(r => {
-                    const hasUrl = r.url && (r.url.startsWith('https://') || r.url.startsWith('http://'));
-                    return hasUrl
-                      ? `<a class="ref-pill" href="#" data-action="open-url" data-url="${h(r.url)}">▶ ${h(r.title || r.url)}</a>`
-                      : `<span class="ref-pill ref-pill-nourl">${h(r.title)}</span>`;
-                  })
-                  .join('');
-                const tagsLine = (tt.tags || []).length > 0
-                  ? `<div style="font-size:9px;color:var(--text-dim);font-family:var(--font-mono);margin-bottom:4px">${tt.tags.map(t => h(t)).join(' ')}</div>`
-                  : '';
-                return `<div class="track-type-card"><div class="track-type-name">${h(tt.name || 'Track Type')}</div>${tagsLine}${wants ? `<div class="track-type-wants">${wants}</div>` : ''}${avoids ? `<div class="track-type-avoids">${avoids}</div>` : ''}${refs ? `<div class="track-type-refs">${refs}</div>` : ''}</div>`;
-              }).join('')}
+              ${trackTypes.map(trackTypeCardHTML).join('')}
             </div>`;
           return `
             <div class="brief-card archived" style="margin-bottom:8px">
@@ -3142,13 +3290,7 @@ function renderNotesPanel(contact, opts = {}) {
          onclick="setContactStatus('${h(contact.id)}','${s}')"></button>
   `).join('');
 
-  const logsHTML = notesLog.length === 0
-    ? `<div style="font-size:10px;color:var(--text-dim)">No notes yet.</div>`
-    : [...notesLog].reverse().map(entry => `
-        <div class="np-note-entry">
-          <div class="np-note-date">${h(entry.date)}</div>
-          <div class="np-note-text">${h(entry.text)}</div>
-        </div>`).join('');
+  const notepadText = [...notesLog].reverse().map(e => e.text).join('\n\n');
 
   const artistNames = opts.showArtists
     ? artists.filter(a => Array.isArray(contact.artist_ids) && contact.artist_ids.includes(a.id)).map(a => a.name)
@@ -3229,9 +3371,13 @@ function renderNotesPanel(contact, opts = {}) {
     </div>
     <div class="np-notes-area">
       <div class="np-notes-section-label">Notes</div>
-      ${logsHTML}
-      <button class="np-add-note-btn" onclick="showAddNoteInput('${h(contact.id)}')">+ Add note</button>
+      <textarea class="np-notepad" placeholder="Type a note…"
+        onblur="saveNotepad('${h(contact.id)}',this.value)"
+        oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'">${h(notepadText)}</textarea>
     </div>`;
+
+  const ta = panel.querySelector('.np-notepad');
+  if (ta) { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; }
 }
 
 function saveExtraEmail(contactId, index, value) {
@@ -3286,43 +3432,27 @@ function setContactStatus(contactId, status) {
   syncContact(contacts[idx]);
 }
 
-function showAddNoteInput(contactId) {
-  const panel = document.getElementById('notes-panel');
-  if (!panel) return;
-  const addBtn = panel.querySelector('.np-add-note-btn');
-  if (!addBtn) return;
-
-  const textarea = document.createElement('textarea');
-  textarea.className = 'np-note-input';
-  textarea.placeholder = 'Add a note…';
-  textarea.rows = 3;
-  addBtn.replaceWith(textarea);
-  textarea.focus();
-
-  let saved = false;
-  function commit() {
-    if (saved) return;
-    saved = true;
-    const text = textarea.value.trim();
-    if (text) saveNote(contactId, text);
-    else renderDetail();
-  }
-
-  textarea.addEventListener('blur', commit);
-  textarea.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); textarea.blur(); }
-    if (e.key === 'Escape') { saved = true; renderDetail(); }
-  });
-}
 
 function saveNote(contactId, text) {
   const idx = contacts.findIndex(c => c.id === contactId);
   if (idx < 0) return;
-  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const today = new Date().toISOString().slice(0, 10);
   const entry = { date: today, text };
   const existing = Array.isArray(contacts[idx].notes_log) ? contacts[idx].notes_log : [];
   contacts[idx] = { ...contacts[idx], notes_log: [...existing, entry] };
   renderDetail();
+  syncContact(contacts[idx]);
+}
+
+function saveNotepad(contactId, value) {
+  const idx = contacts.findIndex(c => c.id === contactId);
+  if (idx < 0) return;
+  const text = value.trim();
+  const existing = [...(Array.isArray(contacts[idx].notes_log) ? contacts[idx].notes_log : [])].reverse().map(e => e.text).join('\n\n');
+  if (text === existing) return;
+  const today = new Date().toISOString().slice(0, 10);
+  const newLog = text ? [{ date: today, text }] : [];
+  contacts[idx] = { ...contacts[idx], notes_log: newLog };
   syncContact(contacts[idx]);
 }
 
@@ -3331,7 +3461,7 @@ function selectArtist(id) {
   selectedContactId = null;
   contactEditMode = false;
   wsStatusFilter = 'all';
-  wsTab = 'contacts';
+  wsTab = 'briefs';
   archivedExpanded = false;
   render();
   if (window.innerWidth < 960) {
@@ -3339,7 +3469,12 @@ function selectArtist(id) {
   }
 }
 
-function setLabel(lbl) { activeLabel = lbl; render(); }
+function setLabel(lbl) {
+  if (briefsViewActive) briefsViewLabel = lbl;
+  else if (contactsViewActive) contactsViewLabel = lbl;
+  else activeLabel = lbl;
+  render();
+}
 
 // ─── ARTIST CRUD ───
 function openArtistModal(id) {
@@ -3651,14 +3786,18 @@ async function _processParsedBrief(parsed) {
 
   let importedCount = 0;
   const errors = [];
+  const allBriefArtistIds = [];
 
   for (const ba of briefArtists) {
     try {
       let artist = matchArtistByName(ba.name);
       if (!artist) artist = await autoCreateArtistFromBrief(ba.name, label);
 
+      allBriefArtistIds.push(artist.id);
+
+      const existingIdx = briefs.findIndex(b => b.artist_id === artist.id && b.label === (label || ''));
       const brief = {
-        id: uid(),
+        id: existingIdx >= 0 ? briefs[existingIdx].id : uid(),
         list_id: currentListId,
         artist_id: artist.id,
         source_pdf: _sourcePdf || '',
@@ -3668,9 +3807,13 @@ async function _processParsedBrief(parsed) {
         track_types: Array.isArray(ba.track_types) ? ba.track_types : [],
         submission_emails: safeEmails,
         matched_contact_ids: matchedContactIds,
-        created_at: new Date().toISOString(),
+        created_at: existingIdx >= 0 ? briefs[existingIdx].created_at : new Date().toISOString(),
       };
-      briefs.push(brief);
+      if (existingIdx >= 0) {
+        briefs[existingIdx] = brief;
+      } else {
+        briefs.push(brief);
+      }
       await syncBrief(brief);
       importedCount++;
     } catch (err) {
@@ -3680,10 +3823,23 @@ async function _processParsedBrief(parsed) {
 
   // Auto-create contacts from brief contacts list
   const parsedContacts = Array.isArray(parsed.contacts) ? parsed.contacts : [];
-  const allBriefArtistIds = briefArtists
-    .map(ba => matchArtistByName(ba.name))
-    .filter(Boolean)
-    .map(a => a.id);
+
+  // Merge allBriefArtistIds into an existing contact (dedup, fire-and-forget sync)
+  function mergeArtistIds(idx) {
+    if (!allBriefArtistIds.length) return;
+    const existing = contacts[idx].artist_ids || [];
+    const merged = [...new Set([...existing, ...allBriefArtistIds])];
+    if (merged.length === existing.length) return;
+    contacts[idx] = { ...contacts[idx], artist_ids: merged };
+    syncContact(contacts[idx]);
+  }
+
+  // Apply artist IDs to contacts already matched via submission_emails
+  matchedContactIds.forEach(cid => {
+    const idx = contacts.findIndex(c => c.id === cid);
+    if (idx >= 0) mergeArtistIds(idx);
+  });
+
   let newContactCount = 0;
 
   for (const pc of parsedContacts) {
@@ -3691,9 +3847,9 @@ async function _processParsedBrief(parsed) {
     const email = pc.email.toLowerCase().trim();
 
     if (!pc.name) {
-      // Email-only: create if not already in any contact's emails
-      const exists = contacts.some(c => emailsOf(c).includes(email));
-      if (!exists) {
+      // Email-only: create if not already in any contact's emails, else merge artist IDs
+      const idx = contacts.findIndex(c => emailsOf(c).includes(email));
+      if (idx < 0) {
         const nc = {
           id: uid(),
           list_id: currentListId,
@@ -3711,11 +3867,16 @@ async function _processParsedBrief(parsed) {
         contacts.push(nc);
         syncContact(nc);
         newContactCount++;
+      } else {
+        mergeArtistIds(idx);
       }
     } else {
-      // Name + email: check email first (skip if any contact already has it)
-      const byEmail = contacts.some(c => emailsOf(c).includes(email));
-      if (byEmail) continue;
+      // Name + email: check email first
+      const byEmailIdx = contacts.findIndex(c => emailsOf(c).includes(email));
+      if (byEmailIdx >= 0) {
+        mergeArtistIds(byEmailIdx);
+        continue;
+      }
 
       // Check name within same label
       const byNameIdx = contacts.findIndex(c =>
@@ -3723,13 +3884,14 @@ async function _processParsedBrief(parsed) {
         (c.name || '').toLowerCase() === pc.name.toLowerCase()
       );
       if (byNameIdx >= 0) {
-        // Name exists but email isn't on it — add to extra_emails
+        // Name exists but email isn't on it — add to extra_emails and merge artist IDs
         const emails = [...(contacts[byNameIdx].extra_emails || [])];
         if (!emailsOf(contacts[byNameIdx]).includes(email)) {
           emails.push(pc.email.trim());
           contacts[byNameIdx] = { ...contacts[byNameIdx], extra_emails: emails };
-          syncContact(contacts[byNameIdx]);
         }
+        mergeArtistIds(byNameIdx);
+        syncContact(contacts[byNameIdx]);
       } else {
         // New person — create contact
         const nc = {
@@ -3994,9 +4156,18 @@ document.addEventListener('click', e => {
   if (action === 'select')              selectArtist(el.dataset.id);
   else if (action === 'filter')         setLabel(el.dataset.label);
   else if (action === 'open-url')       { e.preventDefault(); if (el.dataset.url) window.open(el.dataset.url); }
+  else if (action === 'toggle-briefs-view') {
+    briefsViewActive = !briefsViewActive;
+    if (briefsViewActive) { contactsViewActive = false; selectedId = null; selectedContactId = null; }
+    render();
+  }
+  else if (action === 'set-briefs-sort') {
+    briefsViewSort = el.dataset.sort;
+    renderDetail();
+  }
   else if (action === 'toggle-contacts-view') {
     contactsViewActive = !contactsViewActive;
-    if (contactsViewActive) { selectedId = null; contactEditMode = false; }
+    if (contactsViewActive) { briefsViewActive = false; selectedId = null; contactEditMode = false; }
     selectedContactId = null;
     render();
   }
@@ -4012,6 +4183,17 @@ document.addEventListener('click', e => {
   else if (action === 'toggle-contact-edit') {
     contactEditMode = !contactEditMode;
     renderDetail();
+  }
+  else if (action === 'goto-contact') {
+    const contactId = el.dataset.contactId;
+    if (contactId) {
+      briefsViewActive = false;
+      contactsViewActive = true;
+      selectedId = null;
+      contactEditMode = false;
+      selectedContactId = contactId;
+      render();
+    }
   }
   else if (action === 'toggle-brief-filter') { briefFilterActive = !briefFilterActive; render(); }
   else if (action === 'toggle-archived-expanded') { archivedExpanded = !archivedExpanded; renderDetail(); }
@@ -4114,6 +4296,8 @@ labelCtxAction.addEventListener('click', () => {
   } else {
     hiddenLabels.add(labelCtxTarget);
     if (activeLabel === labelCtxTarget) { activeLabel = 'all'; }
+    if (briefsViewLabel === labelCtxTarget) { briefsViewLabel = 'all'; }
+    if (contactsViewLabel === labelCtxTarget) { contactsViewLabel = 'all'; }
   }
   localStorage.setItem('kpc-hidden-labels', JSON.stringify([...hiddenLabels]));
   labelCtxMenu.style.display = 'none';
@@ -4137,6 +4321,12 @@ document.addEventListener('keydown', e => {
     e.preventDefault();
     document.getElementById('search').focus();
     document.getElementById('search').select();
+  }
+  if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+    e.preventDefault();
+    briefsViewActive = !briefsViewActive;
+    if (briefsViewActive) { contactsViewActive = false; selectedId = null; selectedContactId = null; }
+    render();
   }
   if (e.key === 'Escape') {
     if (document.getElementById('settings-overlay').classList.contains('open')) {
@@ -4433,6 +4623,8 @@ async function openList(listId, role) {
   currentListName = lists.find(l => l.id === listId)?.name || '';
   selectedId = null;
   activeLabel = 'all';
+  briefsViewLabel = 'all';
+  contactsViewLabel = 'all';
   searchQuery = '';
   sortMode = loadSortMode();
   customOrder = loadCustomOrder();
@@ -4812,11 +5004,24 @@ initApp();
   const h1 = document.getElementById('col-resize-1');
   const h2 = document.getElementById('col-resize-2');
 
+  const listEl = document.querySelector('.artist-list');
+
   function apply() {
-    app.style.gridTemplateColumns = `${widths.sidebar}px ${widths.list}px 1fr`;
+    const hideList = typeof briefsViewActive !== 'undefined' && briefsViewActive;
+    if (hideList) {
+      app.style.gridTemplateColumns = `${widths.sidebar}px 1fr`;
+      if (listEl) listEl.style.display = 'none';
+      h2.style.display = 'none';
+    } else {
+      app.style.gridTemplateColumns = `${widths.sidebar}px ${widths.list}px 1fr`;
+      if (listEl) listEl.style.display = '';
+      h2.style.display = '';
+    }
     h1.style.left = widths.sidebar + 'px';
-    h2.style.left = (widths.sidebar + widths.list) + 'px';
+    if (!hideList) h2.style.left = (widths.sidebar + widths.list) + 'px';
   }
+
+  window.applyColumns = apply;
 
   function save() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(widths));
