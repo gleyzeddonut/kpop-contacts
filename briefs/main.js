@@ -55,21 +55,44 @@ function storeApiKey(key) {
   fs.writeFileSync(apiKeyFile, safeStorage.encryptString(key))
 }
 
+const sleep = (ms) => new Promise(r => setTimeout(r, ms))
+
 async function callClaudeDirect(body, apiKey) {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  })
-  if (!res.ok) {
+  // Retry transient failures (429 rate limit, 5xx, network drop) with backoff.
+  // A 4xx other than 429 is a real request problem — fail fast, don't retry.
+  const MAX_ATTEMPTS = 3
+  let lastErr = null
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    let res
+    try {
+      res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      })
+    } catch (netErr) {
+      lastErr = netErr // network/DNS error — retryable
+      if (attempt < MAX_ATTEMPTS) { briefProgress(`Network error — retrying (${attempt}/${MAX_ATTEMPTS})…`); await sleep(attempt * 1500); continue }
+      throw new Error('Network error reaching Anthropic: ' + (netErr?.message || netErr))
+    }
+    if (res.ok) return res.json()
+
+    const retryable = res.status === 429 || res.status >= 500
     const err = await res.json().catch(() => ({}))
-    throw new Error(err.error?.message || `Anthropic error ${res.status}`)
+    lastErr = new Error(err.error?.message || `Anthropic error ${res.status}`)
+    if (retryable && attempt < MAX_ATTEMPTS) {
+      const wait = (Number(res.headers.get('retry-after')) || attempt * 2) * 1000
+      briefProgress(`Anthropic ${res.status} — retrying in ${Math.round(wait / 1000)}s (${attempt}/${MAX_ATTEMPTS})…`)
+      await sleep(wait)
+      continue
+    }
+    throw lastErr
   }
-  return res.json()
+  throw lastErr || new Error('Anthropic request failed')
 }
 
 function briefProgress(msg) {
@@ -81,18 +104,37 @@ function briefProgress(msg) {
 
 // Extract hyperlink URIs from raw PDF bytes (URI annotation metadata, not visible text)
 function extractPdfUris(buffer) {
-  const MUSIC_HOSTS = ['youtube.com/watch', 'youtu.be/', 'open.spotify.com/track', 'open.spotify.com/album',
-    'open.spotify.com/playlist', 'soundcloud.com', 'music.apple.com', 's.disco.ac', 'untitled.stream',
-    'somespecialmagic.com']
+  // Known music/streaming hosts to keep…
+  const MUSIC_HOSTS = ['youtube.com/watch', 'youtu.be/', 'youtube.com/playlist', 'music.youtube.com',
+    'open.spotify.com/track', 'open.spotify.com/album', 'open.spotify.com/playlist', 'open.spotify.com/artist',
+    'spotify.link/', 'soundcloud.com', 'on.soundcloud.com', 'music.apple.com', 'tidal.com', 'listen.tidal.com',
+    'audius.co', 'audiomack.com', 'bandcamp.com', 'deezer.com', 'vimeo.com',
+    's.disco.ac', 'disco.ac', 'untitled.stream', 'somespecialmagic.com', 'box.com', 'dropbox.com', 'drive.google.com',
+    'wetransfer.com', 'we.tl/']
+  // …plus anything that looks like a streaming/sharing link by keyword, so new
+  // platforms aren't silently dropped just because they're not in the list.
+  const KEYWORDS = /(stream|listen|music|track|album|playlist|audio|song|demo|ref)/i
   const raw = buffer.toString('latin1')
   const uris = []
   const re = /\/URI\s*\(([^)]+)\)/g
   let m
   while ((m = re.exec(raw)) !== null) {
     const u = m[1].trim()
-    if (MUSIC_HOSTS.some(h => u.includes(h))) uris.push(u)
+    if (!/^https?:\/\//i.test(u)) continue
+    if (MUSIC_HOSTS.some(h => u.includes(h)) || KEYWORDS.test(u)) uris.push(u)
   }
   return [...new Set(uris)]
+}
+
+// Anthropic caps a request near 32MB and base64 inflates a PDF by ~33%, so the
+// raw file has to stay under ~24MB. Cap at 20MB for headroom + a clear message.
+const MAX_PDF_BYTES = 20 * 1024 * 1024
+function assertPdfSize(filePath) {
+  const stat = fs.statSync(filePath)
+  if (stat.size > MAX_PDF_BYTES) {
+    const mb = (stat.size / 1024 / 1024).toFixed(1)
+    throw new Error(`This PDF is ${mb}MB — too large to parse (max 20MB). Try exporting a lighter version or splitting it.`)
+  }
 }
 
 // ── Claude API: parse a brief PDF ──
@@ -154,7 +196,7 @@ Return ONLY the JSON object. No markdown, no code fences, no explanation.${uriHi
   briefProgress('Calling Anthropic…')
   const data = await callClaudeDirect({
     model: 'claude-sonnet-4-6',
-    max_tokens: 8192,
+    max_tokens: 16384,
     messages: [{
       role: 'user',
       content: [
@@ -165,6 +207,12 @@ Return ONLY the JSON object. No markdown, no code fences, no explanation.${uriHi
   }, apiKey)
 
   briefProgress('Claude responded — parsing JSON…')
+
+  // If the model hit the token ceiling the JSON is cut off mid-object and will
+  // fail to parse — give a clear cause instead of a cryptic "unparseable JSON".
+  if (data.stop_reason === 'max_tokens') {
+    throw new Error('This brief is too long to parse in one pass (response hit the token limit). Try splitting the PDF into fewer artists.')
+  }
 
   const text = (data.content || [])
     .filter(b => b.type === 'text')
@@ -197,6 +245,40 @@ ipcMain.handle('set-config', (_, cfg) => { if ('anthropicApiKey' in cfg) storeAp
 ipcMain.handle('store:load', () => store.loadBriefs())
 ipcMain.handle('store:save', (_, { briefs }) => store.saveBriefs(briefs))
 
+// Backup / export — local-only app, so give the user a way to get their data out.
+ipcMain.handle('store:export', async () => {
+  const stamp = new Date().toISOString().slice(0, 10)
+  const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+    title: 'Export Briefs Backup',
+    defaultPath: path.join(app.getPath('downloads'), `briefs-backup-${stamp}.json`),
+    filters: [{ name: 'JSON', extensions: ['json'] }],
+  })
+  if (canceled || !filePath) return { ok: false, canceled: true }
+  fs.writeFileSync(filePath, JSON.stringify(store.loadBriefs(), null, 2))
+  return { ok: true, filePath }
+})
+
+ipcMain.handle('store:import', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+    title: 'Import Briefs Backup',
+    filters: [{ name: 'JSON', extensions: ['json'] }],
+    properties: ['openFile'],
+  })
+  if (canceled || !filePaths[0]) return { ok: false, canceled: true }
+  let parsed
+  try { parsed = JSON.parse(fs.readFileSync(filePaths[0], 'utf8')) }
+  catch (e) { return { ok: false, error: 'Not a valid JSON file' } }
+  if (!Array.isArray(parsed)) return { ok: false, error: 'Backup file does not contain a briefs array' }
+  return { ok: true, briefs: parsed }
+})
+
+ipcMain.handle('store:reveal', () => {
+  const file = path.join(app.getPath('userData'), 'briefs.json')
+  if (fs.existsSync(file)) shell.showItemInFolder(file)
+  else shell.openPath(app.getPath('userData'))
+  return true
+})
+
 // Import / parse
 ipcMain.handle('briefs:import', async () => {
   const { canceled, filePaths } = await dialog.showOpenDialog({
@@ -206,22 +288,25 @@ ipcMain.handle('briefs:import', async () => {
   })
   if (canceled || filePaths.length === 0) return null
   const filePath = filePaths[0]
-  const stat = fs.statSync(filePath)
-  if (stat.size > 10 * 1024 * 1024) throw new Error('PDF too large (max 10MB)')
+  assertPdfSize(filePath)
   const parsed = await parseBriefPdf(filePath)
   parsed._sourcePdf = path.basename(filePath)
   return parsed
 })
 
 ipcMain.handle('briefs:importFromPath', async (_, { filePath }) => {
-  const stat = fs.statSync(filePath)
-  if (stat.size > 10 * 1024 * 1024) throw new Error('PDF too large (max 10MB)')
+  assertPdfSize(filePath)
   const parsed = await parseBriefPdf(filePath)
   parsed._sourcePdf = path.basename(filePath)
   return parsed
 })
 
-ipcMain.handle('briefs:openSource', async (_, { filename }) => {
+ipcMain.handle('briefs:openSource', async (_, { filename, knownPath }) => {
+  // If we resolved this PDF's full path before, try it first so we don't
+  // re-prompt every time the file lives outside the standard folders.
+  if (knownPath) {
+    try { await fs.promises.access(knownPath); await shell.openPath(knownPath); return { found: true, path: knownPath } } catch {}
+  }
   // Strip any path components — only ever resolve a bare filename inside known dirs.
   const safe = path.basename(String(filename || ''))
   if (!safe) return { found: false }
@@ -232,7 +317,7 @@ ipcMain.handle('briefs:openSource', async (_, { filename }) => {
     path.join(home, 'Documents', safe),
   ]
   for (const p of candidates) {
-    try { await fs.promises.access(p); await shell.openPath(p); return { found: true } } catch {}
+    try { await fs.promises.access(p); await shell.openPath(p); return { found: true, path: p } } catch {}
   }
   const { filePaths } = await dialog.showOpenDialog({
     title: `Locate "${safe}"`,
@@ -240,7 +325,7 @@ ipcMain.handle('briefs:openSource', async (_, { filename }) => {
     filters: [{ name: 'PDF', extensions: ['pdf'] }],
     properties: ['openFile'],
   })
-  if (filePaths && filePaths[0]) { await shell.openPath(filePaths[0]); return { found: true } }
+  if (filePaths && filePaths[0]) { await shell.openPath(filePaths[0]); return { found: true, path: filePaths[0] } }
   return { found: false }
 })
 
@@ -364,6 +449,7 @@ ipcMain.handle('update:get', () => ({
 }))
 ipcMain.handle('update:download', () => downloadUpdate())
 ipcMain.handle('update:install', () => installUpdate())
+ipcMain.handle('update:check', () => checkForUpdatesManually())
 
 let mainWindow = null
 

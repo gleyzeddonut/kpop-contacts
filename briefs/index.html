@@ -285,6 +285,21 @@ input { font: inherit; color: inherit; outline: none; }
 .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
 .modal-key-hint { font-size: 11px; color: var(--text-4); margin-top: 8px; }
 .modal-key-hint a { color: var(--accent); }
+.settings-row { display: flex; gap: 8px; flex-wrap: wrap; }
+/* Wide, scrollable editor for deep brief editing */
+.modal.modal-wide { width: 620px; }
+.modal-scroll { max-height: calc(100vh - 220px); overflow-y: auto; margin: 0 -22px; padding: 0 22px; }
+.modal textarea.short { min-height: 64px; }
+.edit-row { display: flex; gap: 10px; }
+.edit-row > div { flex: 1; }
+.edit-track { border: 1px solid var(--border); border-radius: var(--r-sm); padding: 14px; margin-top: 12px; background: var(--bg-1); }
+.edit-track-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.edit-track-head .t { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-4); }
+.edit-ref { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+.edit-ref input { height: 32px; font-size: 12px; }
+.btn-link { background: none; border: none; color: var(--accent); font-size: 12px; cursor: pointer; padding: 4px 0; }
+.btn-link.danger { color: var(--danger, #e5484d); }
+.edit-add-row { margin-top: 10px; display: flex; gap: 12px; }
 
 /* ── Card context menu ── */
 .card-ctx-popup {
@@ -310,6 +325,8 @@ input { font: inherit; color: inherit; outline: none; }
   font-size: 12px; font-weight: 600; color: var(--text); box-shadow: var(--shadow-soft);
 }
 .toast.err { color: #d65d57; border-color: rgba(214,93,87,0.34); }
+.toast { display: inline-flex; align-items: center; gap: 12px; }
+.toast-action { background: none; border: none; color: var(--accent); font-weight: 700; font-size: 12px; cursor: pointer; padding: 0; }
 
 /* ── Soft scrollbar ── */
 .scroll::-webkit-scrollbar { width: 10px; }
@@ -441,14 +458,6 @@ function deadlineBadgeClass(deadline) {
   if (!isNaN(parsed)) return parsed < new Date() ? 'overdue' : 'future';
   return 'asap';
 }
-function deadlineSortKey(deadline) {
-  if (!deadline) return Number.MAX_SAFE_INTEGER;
-  const d = deadline.toUpperCase();
-  if (d.includes('ASAP')) return -1;
-  const parsed = new Date(deadline.replace(/By\s*/i, '').trim());
-  if (!isNaN(parsed)) return parsed.getTime();
-  return 0;
-}
 // Parse a deadline string to a Date (ASAP → now/urgent), or null if unparseable.
 function parseDeadlineDate(deadline) {
   if (!deadline) return null;
@@ -456,14 +465,38 @@ function parseDeadlineDate(deadline) {
   const parsed = new Date(deadline.replace(/By\s*/i, '').trim());
   return isNaN(parsed) ? null : parsed;
 }
+// A brief's effective due date: an explicit ISO date (set in Edit) wins over the
+// free-text deadline, which is only best-effort parseable ("By May 8th", "ASAP").
+function dueDate(brief) {
+  if (brief && brief.deadlineDate) {
+    const d = new Date(brief.deadlineDate + 'T00:00:00');
+    if (!isNaN(d)) return d;
+  }
+  return parseDeadlineDate(brief && brief.deadline);
+}
+function isAsap(brief) {
+  return !(brief && brief.deadlineDate) && (brief && brief.deadline || '').toUpperCase().includes('ASAP');
+}
+// Badge colour class for a brief's deadline.
+function dueState(brief) {
+  if (isAsap(brief)) return 'asap';
+  const d = dueDate(brief);
+  if (!d) return 'future';
+  return d < new Date() ? 'overdue' : 'future';
+}
+// Sort key: ASAP first, then by date ascending, undated last.
+function dueSortKey(brief) {
+  if (isAsap(brief)) return -1;
+  const d = dueDate(brief);
+  return d ? d.getTime() : Number.MAX_SAFE_INTEGER;
+}
 // Sort a brief into a triage bucket: 'overdue' | 'week' | 'later' | 'none'.
-function deadlineBucket(brief) {
-  const dt = parseDeadlineDate(brief.deadline);
+function dueBucket(brief) {
+  const dt = dueDate(brief);
   if (!dt) return 'none';
   const now = new Date();
-  const isAsap = (brief.deadline || '').toUpperCase().includes('ASAP');
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  if (!isAsap && dt < today) return 'overdue';
+  if (!isAsap(brief) && dt < today) return 'overdue';
   const weekAhead = new Date(today); weekAhead.setDate(today.getDate() + 7);
   if (dt <= weekAhead) return 'week';
   return 'later';
@@ -601,42 +634,124 @@ function CardCtxMenu({ x, y, onEdit, onDelete, onClose }) {
 }
 
 // ── Edit modal for a brief card ──
-function EditBriefModal({ brief, onClose, onSave }) {
+// Full editor: header fields, the General Direction block, and every track type
+// (name / tags / wants / avoids / references). Also used to add a brief manually
+// (isNew) when there's no PDF to parse.
+const linesToStr = (v) => (Array.isArray(v) ? v.join('\n') : (v || ''));
+const strToLines = (s) => (s || '').split('\n').map(l => l.replace(/^[-•·]\s*/, '').trim()).filter(Boolean);
+
+function EditBriefModal({ brief, onClose, onSave, isNew }) {
   const [artistName, setArtistName] = useState(brief.artistName || '');
   const [label, setLabel]           = useState(brief.label || '');
   const [deadline, setDeadline]     = useState(brief.deadline || '');
+  const [deadlineDate, setDeadlineDate] = useState(brief.deadlineDate || '');
   const [emails, setEmails]         = useState((brief.submissionEmails || []).join(', '));
+  const [direction, setDirection]   = useState(linesToStr(brief.direction));
+  const [tracks, setTracks]         = useState(() => (brief.trackTypes || []).map(t => ({
+    name: t.name || '',
+    tags: (t.tags || []).join(', '),
+    wants: linesToStr(t.wants),
+    avoids: linesToStr(t.avoids),
+    refs: (t.refs || []).map(r => typeof r === 'string' ? { title: r, url: '' } : { title: r.title || '', url: r.url || '' }),
+  })));
+
+  const setTrack = (i, patch) => setTracks(ts => ts.map((t, ti) => ti === i ? { ...t, ...patch } : t));
+  const addTrack = () => setTracks(ts => [...ts, { name: '', tags: '', wants: '', avoids: '', refs: [] }]);
+  const removeTrack = (i) => setTracks(ts => ts.filter((_, ti) => ti !== i));
+  const setRef = (ti, ri, patch) => setTrack(ti, { refs: tracks[ti].refs.map((r, j) => j === ri ? { ...r, ...patch } : r) });
+  const addRef = (ti) => setTrack(ti, { refs: [...tracks[ti].refs, { title: '', url: '' }] });
+  const removeRef = (ti, ri) => setTrack(ti, { refs: tracks[ti].refs.filter((_, j) => j !== ri) });
+
   const save = () => {
-    const dl = deadline.trim();
     onSave({
       ...brief,
       artistName: artistName.trim(),
       label: label.trim(),
-      deadline: dl,
-      deadlineState: deadlineBadgeClass(dl) || 'future',
+      deadline: deadline.trim(),
+      deadlineDate: deadlineDate || '',
       submissionEmails: emails.split(/[,\n;]/).map(s => s.trim()).filter(Boolean),
+      direction: direction.trim(),
+      trackTypes: tracks.map(t => ({
+        name: t.name.trim(),
+        tags: t.tags.split(/[,\n]/).map(s => s.trim()).filter(Boolean),
+        wants: strToLines(t.wants),
+        avoids: strToLines(t.avoids),
+        refs: t.refs.map(r => ({ title: (r.title || '').trim(), url: (r.url || '').trim() })).filter(r => r.title || r.url),
+      })).filter(t => t.name || t.wants.length || t.avoids.length || t.refs.length),
     });
   };
+
   return (
     <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div className="modal">
-        <h2>Edit brief</h2>
-        <p>Fix anything the PDF parse got wrong.</p>
-        <label>Artist</label>
-        <input value={artistName} onChange={e=>setArtistName(e.target.value)} autoFocus
-               onKeyDown={e=>{if(e.key==='Enter')save();}}/>
-        <label className="field-gap">Label</label>
-        <input value={label} placeholder="e.g. STARSHIP" onChange={e=>setLabel(e.target.value)}
-               onKeyDown={e=>{if(e.key==='Enter')save();}}/>
-        <label className="field-gap">Deadline</label>
-        <input value={deadline} placeholder="ASAP, By May 8th…" onChange={e=>setDeadline(e.target.value)}
-               onKeyDown={e=>{if(e.key==='Enter')save();}}/>
-        <label className="field-gap">Submit to (comma-separated)</label>
-        <input value={emails} onChange={e=>setEmails(e.target.value)}
-               onKeyDown={e=>{if(e.key==='Enter')save();}}/>
+      <div className="modal modal-wide">
+        <h2>{isNew ? 'Add brief' : 'Edit brief'}</h2>
+        <p>{isNew ? 'Enter a brief manually — no PDF needed.' : 'Fix anything the PDF parse got wrong, including track types and references.'}</p>
+        <div className="modal-scroll">
+          <div className="edit-row">
+            <div>
+              <label>Artist</label>
+              <input value={artistName} onChange={e=>setArtistName(e.target.value)} autoFocus/>
+            </div>
+            <div>
+              <label>Label</label>
+              <input value={label} placeholder="e.g. STARSHIP" onChange={e=>setLabel(e.target.value)}/>
+            </div>
+          </div>
+          <div className="edit-row field-gap">
+            <div>
+              <label>Deadline (text)</label>
+              <input value={deadline} placeholder="ASAP, By May 8th…" onChange={e=>setDeadline(e.target.value)}/>
+            </div>
+            <div>
+              <label>Deadline (date)</label>
+              <input type="date" value={deadlineDate} onChange={e=>setDeadlineDate(e.target.value)}/>
+            </div>
+          </div>
+          <div className="modal-key-hint">The date drives sorting and the Overdue/This week filters. The text is what shows on the card.</div>
+          <label className="field-gap">Submit to (comma-separated)</label>
+          <input value={emails} onChange={e=>setEmails(e.target.value)}/>
+          <label className="field-gap">General direction</label>
+          <textarea className="short" value={direction} onChange={e=>setDirection(e.target.value)} placeholder="Overall direction for this artist…"/>
+
+          <label className="field-gap">Track types</label>
+          {tracks.map((t, ti) => (
+            <div className="edit-track" key={ti}>
+              <div className="edit-track-head">
+                <span className="t">Track {ti + 1}</span>
+                <button className="btn-link danger" onClick={()=>removeTrack(ti)}>Remove</button>
+              </div>
+              <div className="edit-row">
+                <div>
+                  <label>Name</label>
+                  <input value={t.name} placeholder="e.g. Lead single" onChange={e=>setTrack(ti,{name:e.target.value})}/>
+                </div>
+                <div>
+                  <label>Tags (comma-separated)</label>
+                  <input value={t.tags} placeholder="#GenZ_Energy, #Citypop" onChange={e=>setTrack(ti,{tags:e.target.value})}/>
+                </div>
+              </div>
+              <label className="field-gap">Wants (one per line)</label>
+              <textarea className="short" value={t.wants} onChange={e=>setTrack(ti,{wants:e.target.value})}/>
+              <label className="field-gap">Avoids (one per line)</label>
+              <textarea className="short" value={t.avoids} onChange={e=>setTrack(ti,{avoids:e.target.value})}/>
+              <label className="field-gap">References</label>
+              {t.refs.map((r, ri) => (
+                <div className="edit-ref" key={ri}>
+                  <input value={r.title} placeholder="Title" onChange={e=>setRef(ti,ri,{title:e.target.value})}/>
+                  <input value={r.url} placeholder="https://…" onChange={e=>setRef(ti,ri,{url:e.target.value})}/>
+                  <button className="btn-link danger" onClick={()=>removeRef(ti,ri)}>✕</button>
+                </div>
+              ))}
+              <button className="btn-link" onClick={()=>addRef(ti)}>+ Add reference</button>
+            </div>
+          ))}
+          <div className="edit-add-row">
+            <button className="btn-link" onClick={addTrack}>+ Add track type</button>
+          </div>
+        </div>
         <div className="modal-actions">
           <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary btn-sm" onClick={save}>Save</button>
+          <button className="btn btn-primary btn-sm" onClick={save}>{isNew ? 'Add brief' : 'Save'}</button>
         </div>
       </div>
     </div>
@@ -644,9 +759,12 @@ function EditBriefModal({ brief, onClose, onSave }) {
 }
 
 // ── BriefCard (adapted from K:CONTACTS — collapsible, footer Open PDF / Edit / Delete / Draft pitch) ──
-function BriefCard({ brief, expanded, onToggle, onDelete, onEdit, onCtx, toast }) {
+function BriefCard({ brief, expanded, onToggle, onDelete, onEdit, onCtx, onOpenSource, toast }) {
   const title = brief.artistName || brief.label;
   const trackCount = (brief.trackTypes || []).length;
+  const deadlineText = brief.deadline || (brief.deadlineDate
+    ? new Date(brief.deadlineDate + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+    : '');
   return (
     <article className={"brief-card" + (expanded ? "" : " collapsed")}
              onContextMenu={e=>{e.preventDefault();onCtx&&onCtx(brief.id,e.clientX,e.clientY);}}>
@@ -656,7 +774,7 @@ function BriefCard({ brief, expanded, onToggle, onDelete, onEdit, onCtx, toast }
           <div className="brief-head-row">
             <h3 className="brief-label">{title}</h3>
             {brief.label && <span className="brief-label-tag">{brief.label}</span>}
-            {brief.deadline && <span className={`dl-badge dl-${brief.deadlineState||'future'}`}><Icon name="calendar" size={11}/>{brief.deadline}</span>}
+            {deadlineText && <span className={`dl-badge dl-${dueState(brief)}`}><Icon name="calendar" size={11}/>{deadlineText}</span>}
           </div>
         </div>
         {expanded ? (
@@ -710,7 +828,7 @@ function BriefCard({ brief, expanded, onToggle, onDelete, onEdit, onCtx, toast }
 
       <footer className="brief-foot">
         {brief.source_pdf && (
-          <button className="btn btn-ghost btn-sm" onClick={() => window.briefs.openBriefSource(brief.source_pdf)}>
+          <button className="btn btn-ghost btn-sm" onClick={() => onOpenSource(brief)}>
             <Icon name="doc" size={12}/>Open PDF
           </button>
         )}
@@ -760,9 +878,20 @@ function buildPitchBody(brief) {
 }
 
 // ── Settings modal (Anthropic API key) ──
-function SettingsModal({ initialKey, onClose, onSaved, toast, appVersion, updateVersion, updateProgress, updateDownloading, updateDownloaded, onDownloadUpdate }) {
+function SettingsModal({ initialKey, onClose, onSaved, toast, appVersion, updateVersion, updateProgress, updateDownloading, updateDownloaded, onDownloadUpdate, onImportBackup }) {
   const [key, setKey] = useState(initialKey || '');
   const [tpl, setTpl] = useState(() => localStorage.getItem('briefs.pitchTemplate') || '');
+  const [checking, setChecking] = useState(false);
+  const exportBackup = async () => {
+    const res = await window.briefs.exportBriefs();
+    if (res?.ok) toast('Backup exported');
+    else if (res && !res.canceled) toast('Export failed', true);
+  };
+  const checkUpdates = async () => {
+    setChecking(true);
+    try { await window.briefs.checkForUpdates(); }
+    finally { setChecking(false); }
+  };
   const save = async () => {
     await window.briefs.setConfig({ anthropicApiKey: key.trim() });
     if (tpl.trim()) localStorage.setItem('briefs.pitchTemplate', tpl);
@@ -782,18 +911,31 @@ function SettingsModal({ initialKey, onClose, onSaved, toast, appVersion, update
         <label className="field-gap">Default pitch message</label>
         <textarea value={tpl} placeholder={DEFAULT_PITCH_TEMPLATE} onChange={e=>setTpl(e.target.value)} spellCheck={false}/>
         <div className="modal-key-hint">Used by <b>Draft pitch</b>. {'{label}'} becomes the label name and {'{wants}'} becomes what they're looking for. Leave blank for the default.</div>
+
+        <label className="field-gap">Backup</label>
+        <div className="settings-row">
+          <button className="btn btn-ghost btn-sm" onClick={exportBackup}>Export briefs…</button>
+          <button className="btn btn-ghost btn-sm" onClick={onImportBackup}>Import backup…</button>
+          <button className="btn btn-ghost btn-sm" onClick={()=>window.briefs.revealStore()}>Reveal in Finder</button>
+        </div>
+        <div className="modal-key-hint">Your briefs live only on this Mac. Export a JSON copy now and then so you never lose them.</div>
+
         <div className="modal-version">
           <span>Briefs {appVersion ? `v${appVersion}` : ''}{appVersion && !updateVersion ? ' — up to date' : ''}</span>
-          {updateVersion && (updateDownloaded
-            ? <button className="btn btn-primary btn-sm" onClick={()=>window.briefs.installUpdate()}>
-                Update & restart
+          {updateVersion
+            ? (updateDownloaded
+              ? <button className="btn btn-primary btn-sm" onClick={()=>window.briefs.installUpdate()}>
+                  Update & restart
+                </button>
+              : <button className="btn btn-primary btn-sm" disabled={updateDownloading} onClick={onDownloadUpdate}>
+                  {updateDownloading
+                    ? (updateProgress != null ? `Downloading… ${updateProgress}%` : 'Starting download…')
+                    : `Download v${updateVersion}`}
+                </button>)
+            : <button className="btn btn-ghost btn-sm" disabled={checking} onClick={checkUpdates}>
+                {checking ? 'Checking…' : 'Check for updates'}
               </button>
-            : <button className="btn btn-primary btn-sm" disabled={updateDownloading} onClick={onDownloadUpdate}>
-                {updateDownloading
-                  ? (updateProgress != null ? `Downloading… ${updateProgress}%` : 'Starting download…')
-                  : `Download v${updateVersion}`}
-              </button>
-          )}
+          }
         </div>
         <div className="modal-actions">
           <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
@@ -828,10 +970,14 @@ function App() {
   const [updateDownloading, setUpdateDownloading] = useState(false);
   const [updateDownloaded, setUpdateDownloaded] = useState(false);
   const searchRef = useRef(null);
+  const toastTimer = useRef(null);
 
-  const toast = useCallback((msg, isErr) => {
-    setToastMsg({ msg, isErr });
-    setTimeout(() => setToastMsg(null), 2600);
+  // Optional `action` ({label, fn}) renders a button in the toast (e.g. Undo)
+  // and keeps it up longer so there's time to click it.
+  const toast = useCallback((msg, isErr, action) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToastMsg({ msg, isErr, action });
+    toastTimer.current = setTimeout(() => setToastMsg(null), action ? 6000 : 2600);
   }, []);
 
   // Load persisted briefs + key on mount
@@ -874,29 +1020,37 @@ function App() {
   useEffect(() => { localStorage.setItem('briefs.sort', sort); }, [sort]);
   useEffect(() => { localStorage.setItem('briefs.expanded', JSON.stringify([...expanded])); }, [expanded]);
 
+  // Accepts a value or an updater fn. The updater form lets sequential imports
+  // (multi-PDF drop) compose correctly instead of each reading stale state.
   const persist = useCallback((next) => {
-    // Canonicalize labels on every write so cards, the dropdown, and stored
-    // data never drift into "Starship" / "Starship Entertainment" duplicates.
-    const normalized = normalizeLabels(next);
-    setBriefs(normalized);
-    window.briefs.saveBriefs(normalized);
+    setBriefs(prev => {
+      const value = typeof next === 'function' ? next(prev) : next;
+      // Canonicalize labels on every write so cards, the dropdown, and stored
+      // data never drift into "Starship" / "Starship Entertainment" duplicates.
+      const normalized = normalizeLabels(value);
+      window.briefs.saveBriefs(normalized);
+      return normalized;
+    });
   }, []);
 
-  const ingest = useCallback((parsed) => {
-    if (!parsed) return;
+  const ingest = useCallback((parsed, opts = {}) => {
+    if (!parsed) return false;
     const cards = flattenParsed(parsed);
-    if (!cards.length) { toast('No artist briefs found in this PDF', true); return; }
-    // Re-importing the same PDF (or a fresh brief from the same label for the same
-    // artist) replaces the existing card instead of adding a duplicate row
-    const isDup = b => cards.some(c =>
-      normalizeArtistKey(c.artistName) === normalizeArtistKey(b.artistName) &&
-      (c.source_pdf === b.source_pdf || (c.label && labelKey(c.label) === labelKey(b.label))));
-    const replaced = briefs.filter(isDup).length;
-    persist([...cards, ...briefs.filter(b => !isDup(b))]);
-    toast(replaced > 0
-      ? `Imported ${cards.length} brief${cards.length !== 1 ? 's' : ''} (${replaced} updated)`
-      : `Imported ${cards.length} brief${cards.length !== 1 ? 's' : ''}`);
-  }, [briefs, persist, toast]);
+    if (!cards.length) { if (!opts.silent) toast('No artist briefs found in this PDF', true); return false; }
+    persist(prev => {
+      // Re-importing the same PDF (or a fresh brief from the same label for the same
+      // artist) replaces the existing card instead of adding a duplicate row.
+      const isDup = b => cards.some(c =>
+        normalizeArtistKey(c.artistName) === normalizeArtistKey(b.artistName) &&
+        (c.source_pdf === b.source_pdf || (c.label && labelKey(c.label) === labelKey(b.label))));
+      const replaced = prev.filter(isDup).length;
+      if (!opts.silent) toast(replaced > 0
+        ? `Imported ${cards.length} brief${cards.length !== 1 ? 's' : ''} (${replaced} updated)`
+        : `Imported ${cards.length} brief${cards.length !== 1 ? 's' : ''}`);
+      return [...cards, ...prev.filter(b => !isDup(b))];
+    });
+    return true;
+  }, [persist, toast]);
 
   const handleImportError = useCallback((err) => {
     if (err && (err.message?.includes('NO_API_KEY') || err.code === 'NO_API_KEY')) {
@@ -918,12 +1072,35 @@ function App() {
   }, [hasKey, ingest, handleImportError, toast]);
 
   const onDelete = useCallback((id) => {
+    const removed = briefs.find(b => b.id === id);
+    if (!removed) return;
+    const index = briefs.findIndex(b => b.id === id);
     persist(briefs.filter(b => b.id !== id));
-    toast('Brief deleted');
+    // Soft delete: keep the brief in scope so Undo can splice it back where it was.
+    toast(`Deleted "${removed.artistName || removed.label || 'brief'}"`, false, {
+      label: 'Undo',
+      fn: () => {
+        const next = [...briefs.filter(b => b.id !== id)];
+        next.splice(index, 0, removed);
+        persist(next);
+        toast('Restored');
+      },
+    });
+  }, [briefs, persist, toast]);
+
+  // Open the source PDF, remembering the resolved full path so we don't re-prompt.
+  const onOpenSource = useCallback(async (brief) => {
+    const res = await window.briefs.openBriefSource(brief.source_pdf, brief.sourcePath);
+    if (res && res.found && res.path && res.path !== brief.sourcePath) {
+      persist(briefs.map(b => b.id === brief.id ? { ...b, sourcePath: res.path } : b));
+    } else if (res && !res.found) {
+      toast('Could not find that PDF', true);
+    }
   }, [briefs, persist, toast]);
 
   const [cardCtx, setCardCtx]     = useState(null); // {id, x, y} — right-click menu
   const [editingId, setEditingId] = useState(null);
+  const [adding, setAdding]       = useState(null);  // draft brief for manual add, or null
 
   const onUpdate = useCallback((updated) => {
     persist(briefs.map(b => b.id === updated.id ? updated : b));
@@ -931,22 +1108,61 @@ function App() {
     toast('Brief updated');
   }, [briefs, persist, toast]);
 
+  const onAddManual = useCallback(() => {
+    setAdding({
+      id: crypto.randomUUID(),
+      artistName: '', label: '', deadline: '', deadlineDate: '',
+      direction: '', trackTypes: [], submissionEmails: [],
+      source: '', source_pdf: '', importedAt: new Date().toISOString(),
+    });
+  }, []);
+
+  const onSaveManual = useCallback((draft) => {
+    persist([draft, ...briefs]);
+    setAdding(null);
+    toast('Brief added');
+  }, [briefs, persist, toast]);
+
+  // Import a backup JSON and merge by id (restored entries win on collision),
+  // so it recovers lost briefs without wiping anything you've added since.
+  const onImportBackup = useCallback(async () => {
+    const res = await window.briefs.importBackup();
+    if (!res?.ok) { if (res && !res.canceled) toast(res.error || 'Import failed', true); return; }
+    const incoming = res.briefs.filter(b => b && b.id);
+    persist(prev => {
+      const byId = new Map(prev.map(b => [b.id, b]));
+      for (const b of incoming) byId.set(b.id, b);
+      return [...byId.values()];
+    });
+    toast(`Imported ${incoming.length} brief${incoming.length !== 1 ? 's' : ''} from backup`);
+    setSettings(false);
+  }, [persist, toast]);
+
   // Drag-and-drop a PDF onto the window
   useEffect(() => {
     const onOver = e => { e.preventDefault(); setDragging(true); };
     const onLeave = e => { if (e.target === document.body || e.relatedTarget === null) setDragging(false); };
     const onDrop = async e => {
       e.preventDefault(); setDragging(false);
-      const file = e.dataTransfer?.files?.[0];
-      if (!file || !file.name.toLowerCase().endsWith('.pdf')) return;
+      const pdfs = [...(e.dataTransfer?.files || [])].filter(f => f.name.toLowerCase().endsWith('.pdf'));
+      if (pdfs.length === 0) return;
       if (!hasKey) { toast('Add an Anthropic API key first', true); setSettings(true); return; }
       setImport(true); setProgress('');
+      let ok = 0, failed = 0;
       try {
-        const filePath = window.briefs.getPathForFile(file);
-        const parsed = await window.briefs.importBriefPdfFromPath(filePath);
-        ingest(parsed);
-      } catch (err) { handleImportError(err); }
-      finally { setImport(false); setProgress(''); }
+        for (let i = 0; i < pdfs.length; i++) {
+          if (pdfs.length > 1) setProgress(`Reading ${i + 1} of ${pdfs.length}: ${pdfs[i].name}`);
+          try {
+            const filePath = window.briefs.getPathForFile(pdfs[i]);
+            const parsed = await window.briefs.importBriefPdfFromPath(filePath);
+            if (ingest(parsed, { silent: pdfs.length > 1 })) ok++; else failed++;
+          } catch (err) {
+            failed++;
+            if (pdfs.length === 1) handleImportError(err);
+          }
+        }
+        if (pdfs.length > 1) toast(`Imported ${ok} of ${pdfs.length} PDF${pdfs.length !== 1 ? 's' : ''}${failed ? ` — ${failed} failed` : ''}`, failed > 0);
+      } finally { setImport(false); setProgress(''); }
     };
     window.addEventListener('dragover', onOver);
     window.addEventListener('dragleave', onLeave);
@@ -966,10 +1182,13 @@ function App() {
     });
   }, []);
 
+  const expandAll   = useCallback(() => setExpanded(new Set(briefs.map(b => b.id))), [briefs]);
+  const collapseAll = useCallback(() => setExpanded(new Set()), []);
+
   const sorted = useMemo(() => {
     const list = [...briefs];
     if (sort === 'due') {
-      list.sort((a,b) => deadlineSortKey(a.deadline) - deadlineSortKey(b.deadline)); // ASAP on top
+      list.sort((a,b) => dueSortKey(a) - dueSortKey(b)); // ASAP on top
     } else if (sort === 'added') {
       list.sort((a,b) => (b.importedAt||'').localeCompare(a.importedAt||'')); // newest first
     } else {
@@ -987,16 +1206,19 @@ function App() {
   // If the selected label no longer exists (e.g., its briefs were deleted), fall back to all
   const effLabel = labels.includes(labelFilter) ? labelFilter : 'all';
 
+  const allExpanded = briefs.length > 0 && briefs.every(b => expanded.has(b.id));
+
   // Apply deadline filter + label filter + text search
   const visible = useMemo(() => {
     let list = sorted;
-    if (filter !== 'all') list = list.filter(b => deadlineBucket(b) === filter);
+    if (filter !== 'all') list = list.filter(b => dueBucket(b) === filter);
     if (effLabel !== 'all') list = list.filter(b => b.label === effLabel);
     const q = query.trim().toLowerCase();
     if (q) {
       list = list.filter(b => {
-        const hay = [b.artistName, b.label, b.deadline,
-          ...(b.trackTypes || []).flatMap(t => [t.name, ...(t.tags||[]), ...(t.wants||[]), ...(t.avoids||[])])
+        const hay = [b.artistName, b.label, b.deadline, b.direction, ...(b.submissionEmails || []),
+          ...(b.trackTypes || []).flatMap(t => [t.name, ...(t.tags||[]), ...(t.wants||[]), ...(t.avoids||[]),
+            ...(t.refs||[]).map(r => typeof r === 'string' ? r : (r.title || ''))])
         ].join(' ').toLowerCase();
         return hay.includes(q);
       });
@@ -1017,6 +1239,9 @@ function App() {
             <button className={sort==='due'?'on':''} onClick={()=>setSort('due')}>Due</button>
           </div>
         )}
+        <button className="btn btn-ghost btn-sm" onClick={onAddManual} title="Add a brief manually (no PDF)">
+          <Icon name="plus" size={13}/>Add manually
+        </button>
         <button className="btn btn-primary btn-sm" disabled={importing} onClick={onImport}>
           <Icon name="plus" size={13}/>{importing ? 'Reading…' : 'Import Brief PDF'}
         </button>
@@ -1045,6 +1270,9 @@ function App() {
             <button className={"chip-filter"+(filter==='overdue'?' on':'')} onClick={()=>setFilter('overdue')}><span className="dot overdue"/>Overdue</button>
             <button className={"chip-filter"+(filter==='week'?' on':'')} onClick={()=>setFilter('week')}><span className="dot week"/>This week</button>
             <button className={"chip-filter"+(filter==='later'?' on':'')} onClick={()=>setFilter('later')}><span className="dot later"/>Later</button>
+            <button className="chip-filter" onClick={allExpanded ? collapseAll : expandAll}>
+              {allExpanded ? 'Collapse all' : 'Expand all'}
+            </button>
           </div>
         </div>
       )}
@@ -1053,7 +1281,7 @@ function App() {
         <div className="empty">
           <div className="empty-mark"><img src="icon-export/Briefs-180.png" alt=""/></div>
           <div className="empty-title">No briefs yet</div>
-          <div className="empty-sub">Click <b>Import Brief PDF</b> or drop a PDF here.</div>
+          <div className="empty-sub">Click <b>Import Brief PDF</b>, drop PDFs here, or <a href="#" onClick={e=>{e.preventDefault();onAddManual();}}>add one manually</a>.</div>
         </div>
       ) : (
         <div className="scroll">
@@ -1064,7 +1292,7 @@ function App() {
                 <div>Try a different search or filter.</div>
               </div>
             ) : (
-              visible.map(b => <BriefCard key={b.id} brief={b} expanded={expanded.has(b.id)} onToggle={()=>toggleExpanded(b.id)} onDelete={onDelete} onEdit={setEditingId} onCtx={(id,x,y)=>setCardCtx({id,x,y})} toast={toast}/>)
+              visible.map(b => <BriefCard key={b.id} brief={b} expanded={expanded.has(b.id)} onToggle={()=>toggleExpanded(b.id)} onDelete={onDelete} onEdit={setEditingId} onCtx={(id,x,y)=>setCardCtx({id,x,y})} onOpenSource={onOpenSource} toast={toast}/>)
             )}
           </div>
         </div>
@@ -1094,15 +1322,21 @@ function App() {
         onClose={()=>setCardCtx(null)}/>}
       {editingId && briefs.some(b=>b.id===editingId) &&
         <EditBriefModal brief={briefs.find(b=>b.id===editingId)} onClose={()=>setEditingId(null)} onSave={onUpdate}/>}
+      {adding &&
+        <EditBriefModal brief={adding} isNew onClose={()=>setAdding(null)} onSave={onSaveManual}/>}
 
-      {dragging && <div className="drop-overlay">Drop PDF to import</div>}
+      {dragging && <div className="drop-overlay">Drop PDFs to import</div>}
       {settings && <SettingsModal initialKey={apiKey} toast={toast}
         appVersion={appVersion} updateVersion={updateVersion} updateProgress={updateProgress}
         updateDownloading={updateDownloading} updateDownloaded={updateDownloaded}
         onDownloadUpdate={()=>{ setUpdateDownloading(true); window.briefs.downloadUpdate(); }}
+        onImportBackup={onImportBackup}
         onClose={()=>setSettings(false)}
         onSaved={(k)=>{ setApiKey(k); window.briefs.getConfig().then(cfg=>setHasKey(!!cfg?.hasKey)); setSettings(false); }}/>}
-      {toastMsg && <div className={"toast"+(toastMsg.isErr?' err':'')}>{toastMsg.msg}</div>}
+      {toastMsg && <div className={"toast"+(toastMsg.isErr?' err':'')}>
+        {toastMsg.msg}
+        {toastMsg.action && <button className="toast-action" onClick={()=>{ setToastMsg(null); toastMsg.action.fn(); }}>{toastMsg.action.label}</button>}
+      </div>}
     </>
   );
 }

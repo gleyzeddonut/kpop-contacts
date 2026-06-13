@@ -9,11 +9,14 @@ contextBridge.exposeInMainWorld('briefs', {
   importBriefPdf:         ()         => ipcRenderer.invoke('briefs:import'),
   importBriefPdfFromPath: (filePath) => ipcRenderer.invoke('briefs:importFromPath', { filePath }),
   getPathForFile:         (file)     => webUtils.getPathForFile(file),
-  openBriefSource:        (filename) => ipcRenderer.invoke('briefs:openSource', { filename }),
+  openBriefSource:        (filename, knownPath) => ipcRenderer.invoke('briefs:openSource', { filename, knownPath }),
 
   // Local store
-  loadBriefs: ()        => ipcRenderer.invoke('store:load'),
-  saveBriefs: (briefs)  => ipcRenderer.invoke('store:save', { briefs }),
+  loadBriefs:   ()        => ipcRenderer.invoke('store:load'),
+  saveBriefs:   (briefs)  => ipcRenderer.invoke('store:save', { briefs }),
+  exportBriefs: ()        => ipcRenderer.invoke('store:export'),
+  importBackup: ()        => ipcRenderer.invoke('store:import'),
+  revealStore:  ()        => ipcRenderer.invoke('store:reveal'),
 
   // Parse progress (console only)
   onBriefProgress: (cb) => {
@@ -25,6 +28,7 @@ contextBridge.exposeInMainWorld('briefs', {
   getUpdateInfo:  () => ipcRenderer.invoke('update:get'),
   downloadUpdate: () => ipcRenderer.invoke('update:download'),
   installUpdate:  () => ipcRenderer.invoke('update:install'),
+  checkForUpdates:() => ipcRenderer.invoke('update:check'),
   onUpdateAvailable: (cb) => {
     ipcRenderer.removeAllListeners('update:available')
     ipcRenderer.on('update:available', (_, version) => cb(version))
