@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Briefs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Space+Mono&display=swap" rel="stylesheet" />
+<style>
+/* ── Soft pastel theme (matches the Briefs app icon) ── */
+:root {
+  --bg-0: #f3f2f8;
+  --bg-1: #faf9fd;
+  --bg-2: #ecebf3;
+  --surface-1: #ffffff;
+  --surface-2: #fbfaff;
+  --surface-3: #f4f2fb;
+  --surface-hover: #f1eff9;
+
+  --border: #e9e6f1;
+  --border-hi: #e0dcec;
+  --border-bright: #cfc9e0;
+
+  --text: #342f43;
+  --text-2: #6b6479;
+  --text-3: #9b95a8;
+  --text-4: #bcb6c8;
+
+  /* signature pink → blue gradient + violet accent */
+  --grad-a: #cf94da;   /* pink  */
+  --grad-b: #8ba2ea;   /* blue  */
+  --accent: #8f72c9;
+  --accent-2: #b79be0;
+  --accent-deep: #7559b3;
+  --accent-glow: rgba(150, 120, 210, 0.30);
+  --accent-tint: rgba(150, 120, 210, 0.10);
+  --accent-border: rgba(150, 120, 210, 0.30);
+
+  --mint:   #3fa98a;   --mint-tint:   rgba(91,191,160,0.14);   --mint-border:   rgba(91,191,160,0.32);
+  --amber:  #bf8526;   --amber-tint:  rgba(230,178,94,0.18);   --amber-border:  rgba(230,178,94,0.40);
+
+  --on-accent: #ffffff;
+  --r-xs: 7px; --r-sm: 10px; --r-md: 14px; --r-lg: 18px; --r-xl: 24px; --r-pill: 999px;
+
+  --font: 'Manrope', system-ui, sans-serif;
+  --font-display: 'Fredoka', 'Manrope', sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, monospace;
+
+  --shadow-card: 0 1px 2px rgba(82,62,122,0.04), 0 10px 28px -18px rgba(82,62,122,0.35);
+  --shadow-soft: 0 18px 48px -18px rgba(82,62,122,0.38);
+  --shadow-glow-accent: 0 8px 22px -10px var(--accent-glow);
+
+  --theme-glow-a: rgba(207,148,218,0.16);
+  --theme-glow-b: rgba(139,162,234,0.16);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--bg-0);
+  color: var(--text);
+  font-family: var(--font);
+  font-weight: 500;
+  font-feature-settings: "ss01", "cv11";
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(1200px 800px at 12% -10%, var(--theme-glow-a), transparent 60%),
+    radial-gradient(900px 700px at 100% 100%, var(--theme-glow-b), transparent 60%);
+  z-index: 0;
+}
+#root { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; }
+button { font: inherit; cursor: pointer; background: none; border: none; color: inherit; -webkit-appearance: none; appearance: none; }
+input { font: inherit; color: inherit; outline: none; }
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 34px; padding: 0 16px;
+  border-radius: var(--r-pill);
+  font-family: var(--font-display);
+  font-size: 13px; font-weight: 600; letter-spacing: 0.005em;
+  transition: all 0.15s; white-space: nowrap;
+}
+.btn-sm { height: 29px; padding: 0 12px; font-size: 12px; gap: 5px; }
+.btn-primary {
+  background: linear-gradient(135deg, #ba80d2 0%, #7187dd 100%);
+  color: var(--on-accent);
+  box-shadow: 0 8px 20px -8px rgba(140,110,210,0.55), 0 0 0 1px rgba(255,255,255,0.22) inset;
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 26px -8px rgba(140,110,210,0.6), 0 0 0 1px rgba(255,255,255,0.3) inset; }
+.btn-primary:disabled { opacity: 0.55; transform: none; cursor: default; }
+.btn-ghost { background: var(--surface-1); color: var(--text-2); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--surface-hover); color: var(--text); border-color: var(--border-bright); }
+
+/* ── Top bar ── */
+.topbar {
+  display: flex; align-items: center; gap: 10px;
+  height: 62px; padding: 0 18px 0 92px; flex: 0 0 auto;
+  border-bottom: 1px solid var(--border);
+  background: rgba(251,250,253,0.82);
+  backdrop-filter: saturate(1.4) blur(12px);
+  -webkit-app-region: drag;
+}
+.topbar button, .topbar .seg { -webkit-app-region: no-drag; }
+.topbar-logo { width: 26px; height: 26px; border-radius: 7px; box-shadow: 0 2px 8px -2px rgba(120,90,200,0.5); flex: 0 0 auto; }
+.topbar-title { font-family: var(--font-display); font-size: 19px; font-weight: 600; letter-spacing: -0.01em; color: var(--text); }
+.topbar-title b {
+  font-weight: 600;
+  background: linear-gradient(135deg, var(--grad-a), var(--grad-b));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.topbar-spacer { flex: 1; }
+.seg { display: flex; gap: 2px; padding: 3px; background: var(--surface-3); border: 1px solid var(--border); border-radius: var(--r-pill); }
+.seg button {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 400;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--text-3); padding: 5px 12px; border-radius: var(--r-pill); transition: all 0.12s;
+}
+.seg button.on { background: var(--surface-1); color: var(--accent); box-shadow: 0 1px 4px -1px rgba(120,90,200,0.25); }
+.icon-btn {
+  -webkit-app-region: no-drag;
+  width: 34px; height: 34px; border-radius: var(--r-pill);
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surface-1); border: 1px solid var(--border); color: var(--text-2);
+  transition: all 0.15s;
+}
+.icon-btn:hover { background: var(--surface-hover); color: var(--accent); border-color: var(--border-bright); }
+.icon-btn { position: relative; }
+.update-dot {
+  position: absolute; top: 4px; right: 4px; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 0 2px var(--surface-1);
+}
+.modal-version {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border);
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-4);
+}
+
+/* ── Scroll area + list ── */
+.scroll { flex: 1; min-height: 0; overflow: auto; }
+.briefs-pane {
+  padding: 24px 28px 36px;
+  display: flex; flex-direction: column; gap: 16px;
+  max-width: 760px; margin: 0 auto;
+}
+
+/* ── Empty + drop states ── */
+.empty {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 10px; color: var(--text-3);
+}
+.empty-mark {
+  width: 84px; height: 84px; border-radius: 20px;
+  box-shadow: 0 16px 36px -14px rgba(120,90,200,0.5);
+  display: inline-flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.empty-mark img { width: 100%; height: 100%; display: block; }
+.empty-title { font-family: var(--font-display); font-size: 17px; font-weight: 600; color: var(--text); margin-top: 4px; }
+.empty-sub { font-size: 13px; }
+.empty-sub b { color: var(--accent); font-weight: 700; }
+.drop-overlay {
+  position: fixed; inset: 0; z-index: 50; pointer-events: none;
+  border: 2px dashed var(--accent-border); border-radius: 12px; margin: 8px;
+  background: var(--accent-tint);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; color: var(--accent);
+}
+
+/* ── Brief card ── */
+.brief-card {
+  background: linear-gradient(180deg, var(--surface-2), var(--surface-1));
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+.brief-head { padding: 16px 18px; display: flex; gap: 14px; align-items: flex-start; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; transition: background 0.12s; }
+.brief-head:hover { background: rgba(255,255,255,0.02); }
+.brief-card.collapsed .brief-head { border-bottom: none; }
+.brief-chevron { color: var(--text-3); display: inline-flex; margin-top: 2px; transition: transform 0.15s; flex: 0 0 auto; }
+.brief-collapsed-meta { font-family: var(--font-mono); font-size: 10px; color: var(--text-4); white-space: nowrap; align-self: center; }
+.brief-head-left { flex: 1; min-width: 0; }
+.brief-source {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: 10px; color: var(--text-3);
+  padding: 3px 8px; border-radius: 5px; background: var(--bg-1); border: 1px solid var(--border);
+}
+.brief-source svg { color: var(--text-4); }
+.brief-label-tag {
+  font-family: var(--font-mono); font-size: 10px; color: var(--text-3);
+  padding: 2px 8px; border-radius: 5px; background: var(--bg-1); border: 1px solid var(--border); white-space: nowrap;
+}
+.brief-head-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.brief-label { font-family: var(--font-display); font-size: 19px; font-weight: 600; letter-spacing: -0.01em; color: var(--text); margin: 0; }
+.dl-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: var(--r-pill);
+  font-family: var(--font-mono); font-size: 10px; font-weight: 700; border: 1px solid var(--border);
+}
+.dl-asap    { color: var(--amber); background: var(--amber-tint); border-color: var(--amber-border); }
+.dl-overdue { color: #d65d57; background: rgba(214,93,87,0.12); border-color: rgba(214,93,87,0.34); }
+.dl-future  { color: var(--mint); background: var(--mint-tint); border-color: var(--mint-border); }
+
+.brief-head-right { text-align: right; max-width: 200px; }
+.brief-emails-label {
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text-4); margin-bottom: 6px;
+}
+.brief-emails { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+.brief-email { font-family: var(--font-mono); font-size: 11px; color: var(--accent); word-break: break-all; }
+
+.brief-section { padding: 16px 18px; }
+.brief-section-label {
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-4); margin-bottom: 8px;
+}
+.brief-direction { font-size: 13px; color: var(--text); line-height: 1.55; text-wrap: pretty; }
+
+.brief-tracks { padding: 0 18px 16px; display: flex; flex-direction: column; gap: 10px; }
+.brief-track { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--r-md); padding: 14px 16px; }
+.brief-track-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.brief-track-name { font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: 0.06em; color: var(--accent); }
+.brief-track-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+.tag {
+  font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: 0.02em;
+  padding: 2px 7px; border-radius: 4px; background: var(--surface-2); color: var(--text-3); border: 1px solid var(--border-hi);
+}
+.brief-track-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 10px; }
+.brief-track-col-label {
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text-4); margin-bottom: 5px;
+}
+.brief-track-col-body { font-size: 12px; color: var(--text-2); line-height: 1.55; }
+.brief-track-col-body.dim { color: var(--text-3); }
+
+.brief-track-refs { display: flex; gap: 6px; flex-wrap: wrap; }
+.ref-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: var(--r-pill);
+  font-family: var(--font-mono); font-size: 10px; color: var(--text-2);
+  background: var(--surface-2); border: 1px solid var(--border-hi); transition: all 0.12s;
+}
+.ref-pill:hover { color: var(--accent); border-color: var(--accent-border); background: var(--accent-tint); }
+.ref-pill svg { opacity: 0.6; }
+.ref-pill-link { color: var(--accent); border-color: var(--accent-border); background: var(--accent-tint); text-decoration: none; cursor: pointer; }
+.ref-pill-link:hover { filter: brightness(1.15); }
+
+.brief-foot { padding: 12px 18px; display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border); background: var(--bg-1); }
+.brief-foot-spacer { flex: 1; }
+.brief-foot .btn-danger { color: #d65d57; }
+.brief-foot .btn-danger:hover { background: rgba(214,93,87,0.10); border-color: rgba(214,93,87,0.32); color: #d65d57; }
+
+/* ── Settings modal ── */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+}
+.modal {
+  width: 460px; max-width: calc(100vw - 40px);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface-1));
+  border: 1px solid var(--border-hi); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-soft); padding: 22px;
+}
+.modal h2 { font-family: var(--font-display); font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+.modal p { font-size: 12px; color: var(--text-3); line-height: 1.5; margin-bottom: 16px; }
+.modal label { display: block; font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-4); margin-bottom: 6px; }
+.modal input {
+  width: 100%; height: 38px; padding: 0 12px; border-radius: var(--r-sm);
+  background: var(--bg-1); border: 1px solid var(--border); color: var(--text); font-size: 13px; font-family: var(--font-mono);
+}
+.modal input:focus { border-color: var(--accent-border); }
+.modal textarea {
+  width: 100%; min-height: 120px; padding: 10px 12px; border-radius: var(--r-sm); resize: vertical;
+  background: var(--bg-1); border: 1px solid var(--border); color: var(--text); font-size: 12px; font-family: var(--font-mono); line-height: 1.5;
+}
+.modal textarea:focus { border-color: var(--accent-border); }
+.modal .field-gap { margin-top: 16px; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+.modal-key-hint { font-size: 11px; color: var(--text-4); margin-top: 8px; }
+.modal-key-hint a { color: var(--accent); }
+
+/* ── Card context menu ── */
+.card-ctx-popup {
+  position: fixed; z-index: 300; min-width: 150px;
+  background: var(--surface-1); border: 1px solid var(--border-hi);
+  border-radius: var(--r-sm); box-shadow: var(--shadow-soft); padding: 4px;
+  display: flex; flex-direction: column;
+}
+.card-ctx-popup button {
+  text-align: left; font-size: 12px; font-weight: 600; color: var(--text-2);
+  padding: 7px 10px; border-radius: var(--r-xs); transition: all 0.12s;
+}
+.card-ctx-popup button:hover { background: var(--surface-hover); color: var(--text); }
+.card-ctx-popup button.danger { color: #d65d57; }
+.card-ctx-popup button.danger:hover { background: rgba(214,93,87,0.10); }
+.card-ctx-popup .sep { height: 1px; background: var(--border); margin: 3px 6px; }
+
+/* ── Toast ── */
+.toast {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 200;
+  padding: 10px 16px; border-radius: var(--r-pill);
+  background: var(--surface-3); border: 1px solid var(--border-hi);
+  font-size: 12px; font-weight: 600; color: var(--text); box-shadow: var(--shadow-soft);
+}
+.toast.err { color: #d65d57; border-color: rgba(214,93,87,0.34); }
+
+/* ── Soft scrollbar ── */
+.scroll::-webkit-scrollbar { width: 10px; }
+.scroll::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 999px; border: 3px solid var(--bg-0); }
+.scroll::-webkit-scrollbar-thumb:hover { background: var(--accent-2); }
+.scroll::-webkit-scrollbar-track { background: transparent; }
+
+/* ── Toolbar (search + filters) ── */
+.toolbar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 18px; flex: 0 0 auto;
+  border-bottom: 1px solid var(--border); background: var(--bg-1);
+}
+.search {
+  display: flex; align-items: center; gap: 8px;
+  height: 34px; padding: 0 12px; flex: 1; max-width: 480px;
+  background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: var(--r-pill); color: var(--text-3); transition: all 0.15s;
+}
+.search:focus-within { border-color: var(--accent-border); box-shadow: 0 0 0 3px var(--accent-tint); color: var(--accent); }
+.search input { flex: 1; min-width: 0; border: none; background: none; font-size: 13px; color: var(--text); }
+.search input::placeholder { color: var(--text-3); }
+.search .clear { display: inline-flex; color: var(--text-3); cursor: pointer; }
+.search .clear:hover { color: var(--text); }
+.toolbar-spacer { flex: 1; }
+.filters { display: flex; gap: 6px; }
+.chip-filter {
+  display: inline-flex; align-items: center;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--text-3); padding: 6px 13px; border-radius: var(--r-pill);
+  background: var(--surface-1); border: 1px solid var(--border); transition: all 0.12s;
+}
+.chip-filter:hover { color: var(--text); border-color: var(--border-bright); }
+.chip-filter.on { color: var(--accent); border-color: var(--accent-border); background: var(--accent-tint); }
+.chip-filter .dot { width: 6px; height: 6px; border-radius: 50%; margin-right: 6px; }
+.label-select {
+  -webkit-appearance: none; appearance: none; cursor: pointer;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--text-3); padding: 6px 28px 6px 13px; border-radius: var(--r-pill);
+  background: var(--surface-1); border: 1px solid var(--border); transition: all 0.12s;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23969099' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center;
+  max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.label-select:hover { color: var(--text); border-color: var(--border-bright); }
+.label-select.on { color: var(--accent); border-color: var(--accent-border); background-color: var(--accent-tint); }
+.chip-filter .dot.overdue { background: #d65d57; }
+.chip-filter .dot.week { background: var(--amber); }
+.chip-filter .dot.later { background: var(--mint); }
+
+/* ── No-match state ── */
+.no-match { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: var(--text-3); padding: 70px 20px; font-size: 13px; }
+.no-match .t { font-family: var(--font-display); font-weight: 600; font-size: 16px; color: var(--text-2); }
+
+/* ── Import progress overlay ── */
+.import-overlay {
+  position: fixed; inset: 0; z-index: 150;
+  background: rgba(244,242,248,0.72); backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+}
+.import-card {
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  padding: 34px 44px; min-width: 280px;
+  background: var(--surface-1); border: 1px solid var(--border-hi);
+  border-radius: var(--r-xl); box-shadow: var(--shadow-soft); text-align: center;
+}
+.import-ring {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: conic-gradient(from 0deg, var(--grad-a), var(--grad-b), var(--grad-a));
+  -webkit-mask: radial-gradient(closest-side, transparent 64%, #000 66%);
+  mask: radial-gradient(closest-side, transparent 64%, #000 66%);
+  animation: brief-spin 0.9s linear infinite;
+}
+@keyframes brief-spin { to { transform: rotate(360deg); } }
+.import-title { font-family: var(--font-display); font-weight: 600; font-size: 16px; color: var(--text); white-space: nowrap; }
+.import-msg { font-family: var(--font-mono); font-size: 11px; color: var(--text-3); min-height: 14px; }
+
+/* Compact import indicator (when briefs already exist) */
+.import-pill {
+  position: fixed; top: 130px; left: 50%; transform: translateX(-50%); z-index: 150;
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 16px 8px 12px; max-width: 70vw;
+  background: var(--surface-1); border: 1px solid var(--border-hi);
+  border-radius: var(--r-pill); box-shadow: var(--shadow-soft);
+  animation: pill-in 0.18s ease-out;
+}
+@keyframes pill-in { from { opacity: 0; transform: translate(-50%, -6px); } to { opacity: 1; transform: translate(-50%, 0); } }
+.import-pill .import-ring { width: 16px; height: 16px; flex: 0 0 auto; }
+.import-pill .pill-title { font-family: var(--font-display); font-weight: 600; font-size: 12px; color: var(--text); white-space: nowrap; }
+.import-pill .pill-msg { font-family: var(--font-mono); font-size: 10px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useCallback, useMemo, useRef } = React;
+
+// ── Icon (subset copied from K:CONTACTS) ──
+const Icon = ({ name, size = 16, stroke = 1.6 }) => {
+  const p = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: stroke, strokeLinecap: 'round', strokeLinejoin: 'round' };
+  switch (name) {
+    case 'plus':    return <svg {...p}><path d="M12 5v14M5 12h14"/></svg>;
+    case 'settings':return <svg {...p}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>;
+    case 'mail':    return <svg {...p}><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>;
+    case 'doc':     return <svg {...p}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>;
+    case 'search':  return <svg {...p}><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>;
+    case 'arrow-up-right': return <svg {...p}><path d="M7 17 17 7M9 7h8v8"/></svg>;
+    case 'close':   return <svg {...p}><path d="M6 6l12 12M18 6 6 18"/></svg>;
+    case 'chevron-right': return <svg {...p}><path d="M9 6l6 6-6 6"/></svg>;
+    case 'calendar':return <svg {...p}><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>;
+    case 'music':   return <svg {...p}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>;
+    case 'play':    return <svg {...p} fill="currentColor" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>;
+    case 'trash':   return <svg {...p}><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M10 11v6M14 11v6"/></svg>;
+    default:        return null;
+  }
+};
+
+// ── Helpers (copied from K:CONTACTS) ──
+function deadlineBadgeClass(deadline) {
+  if (!deadline) return null;
+  const d = deadline.toUpperCase();
+  if (d.includes('ASAP')) return 'asap';
+  const parsed = new Date(deadline.replace(/By\s*/i, '').trim());
+  if (!isNaN(parsed)) return parsed < new Date() ? 'overdue' : 'future';
+  return 'asap';
+}
+function deadlineSortKey(deadline) {
+  if (!deadline) return Number.MAX_SAFE_INTEGER;
+  const d = deadline.toUpperCase();
+  if (d.includes('ASAP')) return -1;
+  const parsed = new Date(deadline.replace(/By\s*/i, '').trim());
+  if (!isNaN(parsed)) return parsed.getTime();
+  return 0;
+}
+// Parse a deadline string to a Date (ASAP → now/urgent), or null if unparseable.
+function parseDeadlineDate(deadline) {
+  if (!deadline) return null;
+  if (deadline.toUpperCase().includes('ASAP')) return new Date();
+  const parsed = new Date(deadline.replace(/By\s*/i, '').trim());
+  return isNaN(parsed) ? null : parsed;
+}
+// Sort a brief into a triage bucket: 'overdue' | 'week' | 'later' | 'none'.
+function deadlineBucket(brief) {
+  const dt = parseDeadlineDate(brief.deadline);
+  if (!dt) return 'none';
+  const now = new Date();
+  const isAsap = (brief.deadline || '').toUpperCase().includes('ASAP');
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (!isAsap && dt < today) return 'overdue';
+  const weekAhead = new Date(today); weekAhead.setDate(today.getDate() + 7);
+  if (dt <= weekAhead) return 'week';
+  return 'later';
+}
+
+// Flatten a parsed brief PDF into one card per artist (display shape).
+function flattenParsed(parsed) {
+  let label = parsed.label || '';
+  // Filenames usually carry the label as a bracketed prefix ("[STARSHIP] IDID_LEAD….pdf")
+  if (!label) {
+    const m = (parsed._sourcePdf || '').match(/^\s*\[([^\]]+)\]/);
+    if (m) label = m[1].trim();
+  }
+  const emails = Array.isArray(parsed.submission_emails) ? parsed.submission_emails : [];
+  const source = parsed._sourcePdf || 'brief.pdf';
+  return (Array.isArray(parsed.artists) ? parsed.artists : []).map(a => ({
+    id: crypto.randomUUID(),
+    artistName: a.name || '',
+    source,
+    source_pdf: source,
+    label,
+    deadline: a.deadline || '',
+    deadlineState: deadlineBadgeClass(a.deadline) || 'future',
+    direction: a.general_direction || '',
+    trackTypes: (Array.isArray(a.track_types) ? a.track_types : []).map(t => ({
+      name: t.name || '',
+      tags: t.tags || [],
+      wants: t.wants || [],
+      avoids: t.avoids || [],
+      refs: (t.references || []).map(r => typeof r === 'string' ? { title: r, url: '' } : r),
+    })),
+    submissionEmails: emails,
+    importedAt: new Date().toISOString(),
+  }));
+}
+
+// ── BulletList (copied from K:CONTACTS) ──
+function BulletList({ items }) {
+  const lines = Array.isArray(items)
+    ? items
+    : (items || '').split(/\n/).map(l => l.replace(/^[-•·]\s*/, '').trim()).filter(Boolean);
+  if (!lines.length) return null;
+  return (
+    <ul style={{margin:0,padding:0,listStyle:'none',display:'flex',flexDirection:'column',gap:3}}>
+      {lines.map((l,i) => <li key={i} style={{paddingLeft:12,position:'relative'}}>
+        <span style={{position:'absolute',left:0,color:'var(--text-3)'}}>·</span>{l}
+      </li>)}
+    </ul>
+  );
+}
+
+// Punctuation/spacing-insensitive artist key: "ID:ID", "IDID" and "I.D.I.D" all match
+function normalizeArtistKey(name) {
+  const base = (name || '').replace(/\s*\(.*?\)\s*$/, '').trim().toLowerCase();
+  const tight = base.replace(/[^a-z0-9가-힣]/g, '');
+  return tight || base;
+}
+
+// ── Label canonicalization ──
+// K-pop labels arrive in briefs in inconsistent forms — "Starship",
+// "Starship Entertainment", "STARSHIP ENT." — that are really one label.
+// We reduce each to a key (common suffixes stripped, case/punctuation ignored)
+// so the same label never shows up twice in the filter dropdown or on cards.
+const LABEL_SUFFIXES = /\b(entertainment|ent|company|co|corp|corporation|inc|incorporated|music|musics|records|record|label|labels|group|media|productions|production)\b/g;
+function labelKey(s) {
+  const stripped = (s || '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[._\-,'"()]/g, ' ')
+    .replace(LABEL_SUFFIXES, ' ')
+    .replace(/[^a-z0-9가-힣]/g, '');
+  // If stripping the suffix emptied it (label literally was "Entertainment"),
+  // fall back to the raw tight form so distinct labels stay distinct.
+  return stripped || (s || '').toLowerCase().replace(/[^a-z0-9가-힣]/g, '');
+}
+
+// Pick one display form per label key: longest (most complete name), then
+// most frequent, then alphabetical — so "Starship Entertainment" wins over "Starship".
+function buildLabelCanon(list) {
+  const groups = new Map(); // key -> Map(displayForm -> count)
+  for (const b of list) {
+    const raw = (b.label || '').trim();
+    if (!raw) continue;
+    const k = labelKey(raw);
+    let g = groups.get(k);
+    if (!g) groups.set(k, g = new Map());
+    g.set(raw, (g.get(raw) || 0) + 1);
+  }
+  const canon = new Map();
+  for (const [k, g] of groups) {
+    let best = '', bestCount = -1;
+    for (const [disp, count] of g) {
+      const better = disp.length > best.length
+        || (disp.length === best.length && count > bestCount)
+        || (disp.length === best.length && count === bestCount && disp.localeCompare(best) < 0);
+      if (better) { best = disp; bestCount = count; }
+    }
+    canon.set(k, best);
+  }
+  return canon;
+}
+
+// Rewrite every brief's label to the canonical form for its key. Returns the
+// same array reference when nothing changed (so callers can skip a redundant save).
+function normalizeLabels(list) {
+  const canon = buildLabelCanon(list);
+  let changed = false;
+  const next = list.map(b => {
+    const raw = (b.label || '').trim();
+    if (!raw) return b;
+    const c = canon.get(labelKey(raw)) || raw;
+    if (c === b.label) return b;
+    changed = true;
+    return { ...b, label: c };
+  });
+  return changed ? next : list;
+}
+
+// ── Right-click menu on a brief card ──
+function CardCtxMenu({ x, y, onEdit, onDelete, onClose }) {
+  useEffect(() => {
+    const h = e => { if (!e.target.closest('.card-ctx-popup')) onClose(); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, [onClose]);
+  const mx = Math.min(x, window.innerWidth - 170);
+  const my = Math.min(y, window.innerHeight - 95);
+  return (
+    <div className="card-ctx-popup" style={{left: mx, top: my}} onMouseDown={e=>e.stopPropagation()}>
+      <button onClick={onEdit}>✎ Edit brief</button>
+      <div className="sep"/>
+      <button className="danger" onClick={onDelete}>✕ Delete brief</button>
+    </div>
+  );
+}
+
+// ── Edit modal for a brief card ──
+function EditBriefModal({ brief, onClose, onSave }) {
+  const [artistName, setArtistName] = useState(brief.artistName || '');
+  const [label, setLabel]           = useState(brief.label || '');
+  const [deadline, setDeadline]     = useState(brief.deadline || '');
+  const [emails, setEmails]         = useState((brief.submissionEmails || []).join(', '));
+  const save = () => {
+    const dl = deadline.trim();
+    onSave({
+      ...brief,
+      artistName: artistName.trim(),
+      label: label.trim(),
+      deadline: dl,
+      deadlineState: deadlineBadgeClass(dl) || 'future',
+      submissionEmails: emails.split(/[,\n;]/).map(s => s.trim()).filter(Boolean),
+    });
+  };
+  return (
+    <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="modal">
+        <h2>Edit brief</h2>
+        <p>Fix anything the PDF parse got wrong.</p>
+        <label>Artist</label>
+        <input value={artistName} onChange={e=>setArtistName(e.target.value)} autoFocus
+               onKeyDown={e=>{if(e.key==='Enter')save();}}/>
+        <label className="field-gap">Label</label>
+        <input value={label} placeholder="e.g. STARSHIP" onChange={e=>setLabel(e.target.value)}
+               onKeyDown={e=>{if(e.key==='Enter')save();}}/>
+        <label className="field-gap">Deadline</label>
+        <input value={deadline} placeholder="ASAP, By May 8th…" onChange={e=>setDeadline(e.target.value)}
+               onKeyDown={e=>{if(e.key==='Enter')save();}}/>
+        <label className="field-gap">Submit to (comma-separated)</label>
+        <input value={emails} onChange={e=>setEmails(e.target.value)}
+               onKeyDown={e=>{if(e.key==='Enter')save();}}/>
+        <div className="modal-actions">
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary btn-sm" onClick={save}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── BriefCard (adapted from K:CONTACTS — collapsible, footer Open PDF / Edit / Delete / Draft pitch) ──
+function BriefCard({ brief, expanded, onToggle, onDelete, onEdit, onCtx, toast }) {
+  const title = brief.artistName || brief.label;
+  const trackCount = (brief.trackTypes || []).length;
+  return (
+    <article className={"brief-card" + (expanded ? "" : " collapsed")}
+             onContextMenu={e=>{e.preventDefault();onCtx&&onCtx(brief.id,e.clientX,e.clientY);}}>
+      <div className="brief-head" onClick={onToggle}>
+        <span className="brief-chevron" style={{transform: expanded ? 'rotate(90deg)' : 'none'}}><Icon name="chevron-right" size={16}/></span>
+        <div className="brief-head-left">
+          <div className="brief-head-row">
+            <h3 className="brief-label">{title}</h3>
+            {brief.label && <span className="brief-label-tag">{brief.label}</span>}
+            {brief.deadline && <span className={`dl-badge dl-${brief.deadlineState||'future'}`}><Icon name="calendar" size={11}/>{brief.deadline}</span>}
+          </div>
+        </div>
+        {expanded ? (
+          (brief.submissionEmails||[]).length > 0 && (
+            <div className="brief-head-right">
+              <div className="brief-emails-label">Submit to</div>
+              <div className="brief-emails">{brief.submissionEmails.map(e=><span key={e} className="brief-email">{e}</span>)}</div>
+            </div>
+          )
+        ) : (
+          trackCount > 0 && <div className="brief-collapsed-meta">{trackCount} track type{trackCount !== 1 ? 's' : ''}</div>
+        )}
+      </div>
+
+      {expanded && (<>
+      {brief.direction && (
+        <div className="brief-section">
+          <div className="brief-section-label">Direction</div>
+          <div className="brief-direction"><BulletList items={brief.direction}/></div>
+        </div>
+      )}
+
+      <div className="brief-tracks">
+        {(brief.trackTypes||[]).map((t,i)=>(
+          <div key={i} className="brief-track">
+            <div className="brief-track-head">
+              <div className="brief-track-name">{t.name}</div>
+              <div className="brief-track-tags">{(t.tags||[]).map(tag=><span key={tag} className="tag">{tag}</span>)}</div>
+            </div>
+            <div className="brief-track-grid">
+              <div className="brief-track-col"><div className="brief-track-col-label">Wants</div><div className="brief-track-col-body"><BulletList items={t.wants}/></div></div>
+              <div className="brief-track-col"><div className="brief-track-col-label">Avoids</div><div className="brief-track-col-body dim"><BulletList items={t.avoids}/></div></div>
+            </div>
+            <div className="brief-track-refs">{(t.refs||[]).map((r,ri)=>{
+              const refTitle = typeof r === 'string' ? r : (r.title || r);
+              const url      = typeof r === 'string' ? '' : (r.url || '');
+              const isSpotify = url.includes('spotify.com');
+              const isYoutube = url.includes('youtube.com') || url.includes('youtu.be');
+              const iconName  = isSpotify ? 'music' : isYoutube ? 'play' : 'arrow-up-right';
+              if (url) return (
+                <a key={ri} className="ref-pill ref-pill-link" href="#"
+                   onClick={e=>{e.preventDefault();window.open(url);}}>
+                  <Icon name={iconName} size={10}/>{refTitle}
+                </a>
+              );
+              return <span key={ri} className="ref-pill">{refTitle}<Icon name="arrow-up-right" size={10}/></span>;
+            })}</div>
+          </div>
+        ))}
+      </div>
+
+      <footer className="brief-foot">
+        {brief.source_pdf && (
+          <button className="btn btn-ghost btn-sm" onClick={() => window.briefs.openBriefSource(brief.source_pdf)}>
+            <Icon name="doc" size={12}/>Open PDF
+          </button>
+        )}
+        <button className="btn btn-ghost btn-sm" onClick={() => onEdit(brief.id)}>
+          ✎ Edit
+        </button>
+        <button className="btn btn-ghost btn-sm btn-danger" onClick={() => onDelete(brief.id)}>
+          <Icon name="trash" size={12}/>Delete
+        </button>
+        <div className="brief-foot-spacer"/>
+        <button className="btn btn-primary btn-sm" onClick={() => {
+          const to = (brief.submissionEmails || []).join(',');
+          const subject = `Song Submission — ${brief.label || ''}`;
+          const bodyText = buildPitchBody(brief);
+          const mailto = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+          if (mailto.length < 1800) {
+            window.open(mailto);
+          } else {
+            navigator.clipboard.writeText(bodyText).then(() => toast('Pitch draft copied to clipboard'));
+          }
+        }}>
+          <Icon name="mail" size={12}/>Draft pitch
+        </button>
+      </footer>
+      </>)}
+    </article>
+  );
+}
+
+// ── Pitch template ──
+const DEFAULT_PITCH_TEMPLATE = `Hi,
+
+I'd love to submit material for {label}.
+
+{wants}
+
+Best,`;
+
+function buildPitchBody(brief) {
+  const template = localStorage.getItem('briefs.pitchTemplate') || DEFAULT_PITCH_TEMPLATE;
+  const wants = (brief.trackTypes || []).slice(0, 2)
+    .flatMap(t => [t.name, Array.isArray(t.wants) ? t.wants.join('; ') : t.wants]).filter(Boolean).join('\n');
+  return template
+    .replaceAll('{label}', brief.label || 'your roster')
+    .replaceAll('{wants}', wants ? `What you're looking for:\n${wants}` : '')
+    .replace(/\n{3,}/g, '\n\n');
+}
+
+// ── Settings modal (Anthropic API key) ──
+function SettingsModal({ initialKey, onClose, onSaved, toast, appVersion, updateVersion, updateProgress, updateDownloading, updateDownloaded, onDownloadUpdate }) {
+  const [key, setKey] = useState(initialKey || '');
+  const [tpl, setTpl] = useState(() => localStorage.getItem('briefs.pitchTemplate') || '');
+  const save = async () => {
+    await window.briefs.setConfig({ anthropicApiKey: key.trim() });
+    if (tpl.trim()) localStorage.setItem('briefs.pitchTemplate', tpl);
+    else localStorage.removeItem('briefs.pitchTemplate');
+    toast('Settings saved');
+    onSaved(key.trim());
+  };
+  return (
+    <div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="modal">
+        <h2>Settings</h2>
+        <p>Briefs parses PDFs with Claude. Paste your Anthropic API key here — you only need to do this once. It's stored encrypted on this Mac and never leaves it except to call the Anthropic API.</p>
+        <label>Anthropic API Key</label>
+        <input type="password" value={key} placeholder="sk-ant-…" onChange={e=>setKey(e.target.value)} autoFocus
+               onKeyDown={e=>{if(e.key==='Enter')save();}}/>
+        <div className="modal-key-hint">Get one at <a href="#" onClick={e=>{e.preventDefault();window.open('https://console.anthropic.com/settings/keys');}}>console.anthropic.com</a></div>
+        <label className="field-gap">Default pitch message</label>
+        <textarea value={tpl} placeholder={DEFAULT_PITCH_TEMPLATE} onChange={e=>setTpl(e.target.value)} spellCheck={false}/>
+        <div className="modal-key-hint">Used by <b>Draft pitch</b>. {'{label}'} becomes the label name and {'{wants}'} becomes what they're looking for. Leave blank for the default.</div>
+        <div className="modal-version">
+          <span>Briefs {appVersion ? `v${appVersion}` : ''}{appVersion && !updateVersion ? ' — up to date' : ''}</span>
+          {updateVersion && (updateDownloaded
+            ? <button className="btn btn-primary btn-sm" onClick={()=>window.briefs.installUpdate()}>
+                Update & restart
+              </button>
+            : <button className="btn btn-primary btn-sm" disabled={updateDownloading} onClick={onDownloadUpdate}>
+                {updateDownloading
+                  ? (updateProgress != null ? `Downloading… ${updateProgress}%` : 'Starting download…')
+                  : `Download v${updateVersion}`}
+              </button>
+          )}
+        </div>
+        <div className="modal-actions">
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary btn-sm" onClick={save}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── App ──
+function App() {
+  const [briefs, setBriefs]     = useState([]);
+  const [sort, setSort]         = useState(() => localStorage.getItem('briefs.sort') || 'due'); // 'due' | 'added' | 'name'
+  const [expanded, setExpanded] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('briefs.expanded') || '[]')); }
+    catch { return new Set(); }
+  });
+  const [query, setQuery]       = useState('');
+  const [filter, setFilter]     = useState('all'); // all | overdue | week | later
+  const [labelFilter, setLabelFilter] = useState('all'); // 'all' | exact label string
+  const [importing, setImport]  = useState(false);
+  const [progress, setProgress] = useState('');
+  const [settings, setSettings] = useState(false);
+  const [apiKey, setApiKey]     = useState('');   // user override key (for the Settings field)
+  const [hasKey, setHasKey]     = useState(false); // a usable key exists (built-in or user override)
+  const [dragging, setDragging] = useState(false);
+  const [toastMsg, setToastMsg] = useState(null);
+  const [appVersion, setAppVersion] = useState('');
+  const [updateVersion, setUpdateVersion] = useState(null);   // newer version string, or null
+  const [updateProgress, setUpdateProgress] = useState(null); // download % while updating
+  const [updateDownloading, setUpdateDownloading] = useState(false);
+  const [updateDownloaded, setUpdateDownloaded] = useState(false);
+  const searchRef = useRef(null);
+
+  const toast = useCallback((msg, isErr) => {
+    setToastMsg({ msg, isErr });
+    setTimeout(() => setToastMsg(null), 2600);
+  }, []);
+
+  // Load persisted briefs + key on mount
+  useEffect(() => {
+    window.briefs.loadBriefs().then(b => {
+      const arr = Array.isArray(b) ? b : [];
+      const normalized = normalizeLabels(arr);
+      setBriefs(normalized);
+      if (normalized !== arr) window.briefs.saveBriefs(normalized); // self-heal older duplicate labels
+    });
+    window.briefs.getConfig().then(cfg => { setApiKey(cfg?.anthropicApiKey || ''); setHasKey(!!cfg?.hasKey); });
+    if (window.briefs.onBriefProgress) window.briefs.onBriefProgress(m => setProgress(typeof m === 'string' ? m : (m?.message || '')));
+    if (window.briefs.getUpdateInfo) {
+      window.briefs.getUpdateInfo().then(u => {
+        setAppVersion(u?.current || '');
+        setUpdateVersion(u?.available || null);
+        setUpdateDownloading(!!u?.downloading);
+        setUpdateProgress(u?.progress ?? null);
+        setUpdateDownloaded(!!u?.downloaded);
+      });
+      window.briefs.onUpdateAvailable(v => setUpdateVersion(v));
+      window.briefs.onUpdateProgress(pct => { setUpdateDownloading(true); setUpdateProgress(pct); });
+      if (window.briefs.onUpdateDownloaded) window.briefs.onUpdateDownloaded(() => { setUpdateDownloading(false); setUpdateDownloaded(true); });
+      window.briefs.onUpdateError(msg => { setUpdateDownloading(false); setUpdateProgress(null); toast('Update failed: ' + msg, true); });
+    }
+  }, []);
+
+  // ⌘, opens Settings; ⌘F focuses search
+  useEffect(() => {
+    const onKey = e => {
+      if (!(e.metaKey || e.ctrlKey)) return;
+      if (e.key === ',') { e.preventDefault(); setSettings(true); }
+      else if (e.key === 'f') { e.preventDefault(); searchRef.current?.focus(); searchRef.current?.select(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // Persist UI preferences across launches
+  useEffect(() => { localStorage.setItem('briefs.sort', sort); }, [sort]);
+  useEffect(() => { localStorage.setItem('briefs.expanded', JSON.stringify([...expanded])); }, [expanded]);
+
+  const persist = useCallback((next) => {
+    // Canonicalize labels on every write so cards, the dropdown, and stored
+    // data never drift into "Starship" / "Starship Entertainment" duplicates.
+    const normalized = normalizeLabels(next);
+    setBriefs(normalized);
+    window.briefs.saveBriefs(normalized);
+  }, []);
+
+  const ingest = useCallback((parsed) => {
+    if (!parsed) return;
+    const cards = flattenParsed(parsed);
+    if (!cards.length) { toast('No artist briefs found in this PDF', true); return; }
+    // Re-importing the same PDF (or a fresh brief from the same label for the same
+    // artist) replaces the existing card instead of adding a duplicate row
+    const isDup = b => cards.some(c =>
+      normalizeArtistKey(c.artistName) === normalizeArtistKey(b.artistName) &&
+      (c.source_pdf === b.source_pdf || (c.label && labelKey(c.label) === labelKey(b.label))));
+    const replaced = briefs.filter(isDup).length;
+    persist([...cards, ...briefs.filter(b => !isDup(b))]);
+    toast(replaced > 0
+      ? `Imported ${cards.length} brief${cards.length !== 1 ? 's' : ''} (${replaced} updated)`
+      : `Imported ${cards.length} brief${cards.length !== 1 ? 's' : ''}`);
+  }, [briefs, persist, toast]);
+
+  const handleImportError = useCallback((err) => {
+    if (err && (err.message?.includes('NO_API_KEY') || err.code === 'NO_API_KEY')) {
+      toast('Add an Anthropic API key first', true);
+      setSettings(true);
+    } else {
+      toast('Import failed: ' + (err?.message || 'unknown error'), true);
+    }
+  }, [toast]);
+
+  const onImport = useCallback(async () => {
+    if (!hasKey) { toast('Add an Anthropic API key first', true); setSettings(true); return; }
+    setImport(true); setProgress('');
+    try {
+      const parsed = await window.briefs.importBriefPdf();
+      ingest(parsed);
+    } catch (err) { handleImportError(err); }
+    finally { setImport(false); setProgress(''); }
+  }, [hasKey, ingest, handleImportError, toast]);
+
+  const onDelete = useCallback((id) => {
+    persist(briefs.filter(b => b.id !== id));
+    toast('Brief deleted');
+  }, [briefs, persist, toast]);
+
+  const [cardCtx, setCardCtx]     = useState(null); // {id, x, y} — right-click menu
+  const [editingId, setEditingId] = useState(null);
+
+  const onUpdate = useCallback((updated) => {
+    persist(briefs.map(b => b.id === updated.id ? updated : b));
+    setEditingId(null);
+    toast('Brief updated');
+  }, [briefs, persist, toast]);
+
+  // Drag-and-drop a PDF onto the window
+  useEffect(() => {
+    const onOver = e => { e.preventDefault(); setDragging(true); };
+    const onLeave = e => { if (e.target === document.body || e.relatedTarget === null) setDragging(false); };
+    const onDrop = async e => {
+      e.preventDefault(); setDragging(false);
+      const file = e.dataTransfer?.files?.[0];
+      if (!file || !file.name.toLowerCase().endsWith('.pdf')) return;
+      if (!hasKey) { toast('Add an Anthropic API key first', true); setSettings(true); return; }
+      setImport(true); setProgress('');
+      try {
+        const filePath = window.briefs.getPathForFile(file);
+        const parsed = await window.briefs.importBriefPdfFromPath(filePath);
+        ingest(parsed);
+      } catch (err) { handleImportError(err); }
+      finally { setImport(false); setProgress(''); }
+    };
+    window.addEventListener('dragover', onOver);
+    window.addEventListener('dragleave', onLeave);
+    window.addEventListener('drop', onDrop);
+    return () => {
+      window.removeEventListener('dragover', onOver);
+      window.removeEventListener('dragleave', onLeave);
+      window.removeEventListener('drop', onDrop);
+    };
+  }, [hasKey, ingest, handleImportError, toast]);
+
+  const toggleExpanded = useCallback((id) => {
+    setExpanded(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }, []);
+
+  const sorted = useMemo(() => {
+    const list = [...briefs];
+    if (sort === 'due') {
+      list.sort((a,b) => deadlineSortKey(a.deadline) - deadlineSortKey(b.deadline)); // ASAP on top
+    } else if (sort === 'added') {
+      list.sort((a,b) => (b.importedAt||'').localeCompare(a.importedAt||'')); // newest first
+    } else {
+      list.sort((a,b) => (a.artistName||'').localeCompare(b.artistName||''));
+    }
+    return list;
+  }, [briefs, sort]);
+
+  // Distinct labels across all briefs, for the label filter dropdown
+  const labels = useMemo(() => {
+    const set = new Set(briefs.map(b => b.label).filter(Boolean));
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }, [briefs]);
+
+  // If the selected label no longer exists (e.g., its briefs were deleted), fall back to all
+  const effLabel = labels.includes(labelFilter) ? labelFilter : 'all';
+
+  // Apply deadline filter + label filter + text search
+  const visible = useMemo(() => {
+    let list = sorted;
+    if (filter !== 'all') list = list.filter(b => deadlineBucket(b) === filter);
+    if (effLabel !== 'all') list = list.filter(b => b.label === effLabel);
+    const q = query.trim().toLowerCase();
+    if (q) {
+      list = list.filter(b => {
+        const hay = [b.artistName, b.label, b.deadline,
+          ...(b.trackTypes || []).flatMap(t => [t.name, ...(t.tags||[]), ...(t.wants||[]), ...(t.avoids||[])])
+        ].join(' ').toLowerCase();
+        return hay.includes(q);
+      });
+    }
+    return list;
+  }, [sorted, filter, effLabel, query]);
+
+  return (
+    <>
+      <div className="topbar">
+        <img className="topbar-logo" src="icon-export/Briefs-58.png" alt=""/>
+        <div className="topbar-title">Brief<b>s</b></div>
+        <div className="topbar-spacer"/>
+        {briefs.length > 0 && (
+          <div className="seg">
+            <button className={sort==='name'?'on':''} onClick={()=>setSort('name')}>Name</button>
+            <button className={sort==='added'?'on':''} onClick={()=>setSort('added')}>Added</button>
+            <button className={sort==='due'?'on':''} onClick={()=>setSort('due')}>Due</button>
+          </div>
+        )}
+        <button className="btn btn-primary btn-sm" disabled={importing} onClick={onImport}>
+          <Icon name="plus" size={13}/>{importing ? 'Reading…' : 'Import Brief PDF'}
+        </button>
+        <button className="icon-btn" title={updateVersion ? `Update available — Briefs ${updateVersion}` : 'Settings'} onClick={()=>setSettings(true)}>
+          <Icon name="settings" size={15}/>
+          {updateVersion && <span className="update-dot"/>}
+        </button>
+      </div>
+
+      {briefs.length > 0 && (
+        <div className="toolbar">
+          <div className="search">
+            <Icon name="search" size={15}/>
+            <input ref={searchRef} value={query} placeholder="Search artists, labels, genres…" onChange={e=>setQuery(e.target.value)}/>
+            {query && <span className="clear" onClick={()=>setQuery('')}><Icon name="close" size={14}/></span>}
+          </div>
+          <div className="toolbar-spacer"/>
+          <div className="filters">
+            {labels.length > 1 && (
+              <select className={"label-select"+(effLabel!=='all'?' on':'')} value={effLabel} onChange={e=>setLabelFilter(e.target.value)}>
+                <option value="all">All labels</option>
+                {labels.map(l => <option key={l} value={l}>{l}</option>)}
+              </select>
+            )}
+            <button className={"chip-filter"+(filter==='all'?' on':'')} onClick={()=>setFilter('all')}>All</button>
+            <button className={"chip-filter"+(filter==='overdue'?' on':'')} onClick={()=>setFilter('overdue')}><span className="dot overdue"/>Overdue</button>
+            <button className={"chip-filter"+(filter==='week'?' on':'')} onClick={()=>setFilter('week')}><span className="dot week"/>This week</button>
+            <button className={"chip-filter"+(filter==='later'?' on':'')} onClick={()=>setFilter('later')}><span className="dot later"/>Later</button>
+          </div>
+        </div>
+      )}
+
+      {briefs.length === 0 ? (
+        <div className="empty">
+          <div className="empty-mark"><img src="icon-export/Briefs-180.png" alt=""/></div>
+          <div className="empty-title">No briefs yet</div>
+          <div className="empty-sub">Click <b>Import Brief PDF</b> or drop a PDF here.</div>
+        </div>
+      ) : (
+        <div className="scroll">
+          <div className="briefs-pane">
+            {visible.length === 0 ? (
+              <div className="no-match">
+                <div className="t">No matches</div>
+                <div>Try a different search or filter.</div>
+              </div>
+            ) : (
+              visible.map(b => <BriefCard key={b.id} brief={b} expanded={expanded.has(b.id)} onToggle={()=>toggleExpanded(b.id)} onDelete={onDelete} onEdit={setEditingId} onCtx={(id,x,y)=>setCardCtx({id,x,y})} toast={toast}/>)
+            )}
+          </div>
+        </div>
+      )}
+
+      {importing && briefs.length === 0 && (
+        <div className="import-overlay">
+          <div className="import-card">
+            <div className="import-ring"/>
+            <div className="import-title">Reading your brief</div>
+            <div className="import-msg">{progress || 'Starting…'}</div>
+          </div>
+        </div>
+      )}
+
+      {importing && briefs.length > 0 && (
+        <div className="import-pill">
+          <div className="import-ring"/>
+          <div className="pill-title">Reading your brief</div>
+          <div className="pill-msg">{progress || 'Starting…'}</div>
+        </div>
+      )}
+
+      {cardCtx && <CardCtxMenu x={cardCtx.x} y={cardCtx.y}
+        onEdit={()=>{ setEditingId(cardCtx.id); setCardCtx(null); }}
+        onDelete={()=>{ onDelete(cardCtx.id); setCardCtx(null); }}
+        onClose={()=>setCardCtx(null)}/>}
+      {editingId && briefs.some(b=>b.id===editingId) &&
+        <EditBriefModal brief={briefs.find(b=>b.id===editingId)} onClose={()=>setEditingId(null)} onSave={onUpdate}/>}
+
+      {dragging && <div className="drop-overlay">Drop PDF to import</div>}
+      {settings && <SettingsModal initialKey={apiKey} toast={toast}
+        appVersion={appVersion} updateVersion={updateVersion} updateProgress={updateProgress}
+        updateDownloading={updateDownloading} updateDownloaded={updateDownloaded}
+        onDownloadUpdate={()=>{ setUpdateDownloading(true); window.briefs.downloadUpdate(); }}
+        onClose={()=>setSettings(false)}
+        onSaved={(k)=>{ setApiKey(k); window.briefs.getConfig().then(cfg=>setHasKey(!!cfg?.hasKey)); setSettings(false); }}/>}
+      {toastMsg && <div className={"toast"+(toastMsg.isErr?' err':'')}>{toastMsg.msg}</div>}
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

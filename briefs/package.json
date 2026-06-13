@@ -1,0 +1,70 @@
+{
+  "name": "briefs",
+  "productName": "Briefs",
+  "version": "1.0.5",
+  "description": "Brief PDF reader — simplified standalone companion to K:CONTACTS",
+  "author": "Daniel Gleyzer",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --mac --universal",
+    "dist:dir": "electron-builder --mac --dir -c.mac.identity=null -c.mac.notarize=false",
+    "release": "electron-builder --mac --universal --publish always"
+  },
+  "devDependencies": {
+    "electron": "^42.0.1",
+    "electron-builder": "^25.1.8",
+    "electron-reload": "^2.0.0-alpha.1"
+  },
+  "build": {
+    "appId": "com.gleyzer.briefs",
+    "productName": "Briefs",
+    "directories": {
+      "output": "/Users/dangleyzer/builds/briefs-dist",
+      "buildResources": "build"
+    },
+    "afterPack": "./build/afterPack.js",
+    "files": [
+      "main.js",
+      "preload.js",
+      "store.js",
+      "index.html",
+      "icon-export/Briefs-58.png",
+      "icon-export/Briefs-180.png"
+    ],
+    "publish": {
+      "provider": "github",
+      "owner": "gleyzeddonut",
+      "repo": "briefs-releases",
+      "releaseType": "release"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "category": "public.app-category.productivity",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "notarize": true
+    },
+    "dmg": {
+      "title": "Briefs ${version}"
+    }
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
+  }
+}

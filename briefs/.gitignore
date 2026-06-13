@@ -1,0 +1,4 @@
+node_modules/
+dist/
+dist.nosync/
+apikey.local.js
