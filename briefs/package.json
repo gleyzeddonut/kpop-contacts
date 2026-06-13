@@ -1,7 +1,7 @@
 {
   "name": "briefs",
   "productName": "Briefs",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Brief PDF reader — simplified standalone companion to K:CONTACTS",
   "author": "Daniel Gleyzer",
   "main": "main.js",
