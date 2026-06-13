@@ -961,16 +961,21 @@ function buildPitchBody(brief) {
 function SettingsModal({ initialKey, onClose, onSaved, toast, appVersion, updateVersion, updateProgress, updateDownloading, updateDownloaded, onDownloadUpdate, onImportBackup }) {
   const [key, setKey] = useState(initialKey || '');
   const [tpl, setTpl] = useState(() => localStorage.getItem('briefs.pitchTemplate') || '');
-  const [checking, setChecking] = useState(false);
+  const [checkState, setCheckState] = useState('idle'); // idle | checking | current
   const exportBackup = async () => {
     const res = await window.briefs.exportBriefs();
     if (res?.ok) toast('Backup exported');
     else if (res && !res.canceled) toast('Export failed', true);
   };
+  // Quiet check — reflect the result on the button itself instead of a pop-up.
+  // If an update exists, the parent flips this to the Download button.
   const checkUpdates = async () => {
-    setChecking(true);
-    try { await window.briefs.checkForUpdates(); }
-    finally { setChecking(false); }
+    setCheckState('checking');
+    const res = await window.briefs.checkForUpdates();
+    if (res?.status === 'current') setCheckState('current');
+    else if (res?.status === 'error') { setCheckState('idle'); toast('Update check failed', true); }
+    else if (res?.status === 'unavailable') { setCheckState('idle'); toast('Updates only work in the installed app', true); }
+    else setCheckState('idle'); // 'available' → Download button takes over
   };
   const save = async () => {
     await window.briefs.setConfig({ anthropicApiKey: key.trim() });
@@ -1001,7 +1006,7 @@ function SettingsModal({ initialKey, onClose, onSaved, toast, appVersion, update
         <div className="modal-key-hint">Your briefs live only on this Mac. Export a JSON copy now and then so you never lose them.</div>
 
         <div className="modal-version">
-          <span>Briefs {appVersion ? `v${appVersion}` : ''}{appVersion && !updateVersion ? ' — up to date' : ''}</span>
+          <span>Briefs {appVersion ? `v${appVersion}` : ''}</span>
           {updateVersion
             ? (updateDownloaded
               ? <button className="btn btn-primary btn-sm" onClick={()=>window.briefs.installUpdate()}>
@@ -1012,8 +1017,8 @@ function SettingsModal({ initialKey, onClose, onSaved, toast, appVersion, update
                     ? (updateProgress != null ? `Downloading… ${updateProgress}%` : 'Starting download…')
                     : `Download v${updateVersion}`}
                 </button>)
-            : <button className="btn btn-ghost btn-sm" disabled={checking} onClick={checkUpdates}>
-                {checking ? 'Checking…' : 'Check for updates'}
+            : <button className="btn btn-ghost btn-sm" disabled={checkState !== 'idle'} onClick={checkUpdates}>
+                {checkState === 'checking' ? 'Checking…' : checkState === 'current' ? '✓ Up to date' : 'Check for updates'}
               </button>
           }
         </div>

@@ -411,6 +411,21 @@ function installUpdate() {
   return true
 }
 
+// Quiet check for the Settings button — returns a status, shows no dialogs.
+// If an update exists, the 'update-available' listener already flips the UI to
+// the Download button, so the renderer just needs to know "current" vs not.
+async function checkForUpdatesQuiet() {
+  if (!updater) return { status: 'unavailable' }
+  try {
+    const res = await updater.checkForUpdates()
+    const latest = res?.updateInfo?.version
+    if (!latest || latest === app.getVersion()) return { status: 'current' }
+    return { status: 'available', version: latest }
+  } catch (err) {
+    return { status: 'error', error: String(err?.message || err) }
+  }
+}
+
 async function checkForUpdatesManually() {
   if (!updater) {
     dialog.showMessageBox({ message: 'Updates only work in the installed app, not when running from source.' })
@@ -449,7 +464,7 @@ ipcMain.handle('update:get', () => ({
 }))
 ipcMain.handle('update:download', () => downloadUpdate())
 ipcMain.handle('update:install', () => installUpdate())
-ipcMain.handle('update:check', () => checkForUpdatesManually())
+ipcMain.handle('update:check', () => checkForUpdatesQuiet())
 
 let mainWindow = null
 
